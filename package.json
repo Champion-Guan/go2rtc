@@ -1,4 +1,6 @@
 {
+  "name": "go2rtc",
+  "description": "中文化的摄像头与实时音视频流媒体网关",
   "devDependencies": {
     "@types/node": "^25.2.0",
     "eslint": "^9.39.2",

@@ -1,5 +1,5 @@
 {
-  "项目入口.md": "项目入口.md",
+  "README.md": "README.md",
   "docker/Dockerfile": "容器/Dockerfile",
   "docker/项目入口.md": "容器/说明书.md",
   "docker/hardware.Dockerfile": "容器/硬件加速.Dockerfile",
