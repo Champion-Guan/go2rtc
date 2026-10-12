@@ -55,10 +55,13 @@ type cbcMode interface {
 
 // Dial 支持多种地址格式：
 //   - tapo://{cloud-password}@192.168.1.123 - auth to Tapo cameras
+//
 // 使用云密码，自动检测哈希方法
 //   - tapo://admin:{hashed-cloud-password}@192.168.1.123 - auth to Tapo cameras
+//
 // 使用预先哈希的云密码
 //   - vigi://admin:{password}@192.168.1.123 - auth to Vigi cameras with password
+//
 // 仅支持管理员账户
 func Dial(rawURL string) (*Client, error) {
 	u, err := url.Parse(rawURL)
