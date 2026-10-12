@@ -21,4 +21,4 @@ go2rtc_win*
 
 node_modules
 package-lock.json
-CLAUDE.md
+模型规则.md
