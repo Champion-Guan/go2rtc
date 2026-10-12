@@ -16,7 +16,7 @@ const (
 	TypeObjectEnd = 9
 )
 
-// AMF spec: http://download.macromedia.com/pub/labs/amf/amf0_spec_121207.pdf
+// AMF 规范：http://download.macromedia.com/pub/labs/amf/amf0_spec_121207.pdf
 type AMF struct {
 	buf []byte
 	pos int

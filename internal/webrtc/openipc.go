@@ -13,13 +13,13 @@ import (
 )
 
 func openIPCClient(rawURL string, query url.Values) (core.Producer, error) {
-	// 1. Connect to signalign server
+	// 1. 连接信令服务器
 	conn, _, err := websocket.DefaultDialer.Dial(rawURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Load ICEServers from query param (base64 json)
+	// 2. 从查询参数加载 ICEServers（Base64 编码的 JSON）
 	var conf pion.Configuration
 
 	if s := query.Get("ice_servers"); s != "" {
@@ -29,10 +29,10 @@ func openIPCClient(rawURL string, query url.Values) (core.Producer, error) {
 		}
 	}
 
-	// close websocket when we ready return Producer or connection error
+	// 准备返回生产者或连接错误时关闭 WebSocket
 	defer conn.Close()
 
-	// 3. Create Peer Connection
+	// 3. 创建对等连接
 	api, err := webrtc.NewAPI()
 	if err != nil {
 		return nil, err
@@ -43,13 +43,13 @@ func openIPCClient(rawURL string, query url.Values) (core.Producer, error) {
 		return nil, err
 	}
 
-	// protect from sending ICE candidate before Offer
+	// 防止在连接提议前发送 ICE 候选地址
 	var sendAnswer core.Waiter
 
-	// protect from blocking on errors
+	// 防止错误导致阻塞
 	defer sendAnswer.Done(nil)
 
-	// waiter will wait PC error or WS error or nil (connection OK)
+	// 等待 PeerConnection 错误、WebSocket 错误，或表示连接成功的空值
 	var connState core.Waiter
 
 	prod := webrtc.NewConn(pc)
@@ -87,11 +87,11 @@ func openIPCClient(rawURL string, query url.Values) (core.Producer, error) {
 	go func() {
 		var err error
 
-		// will be closed when conn will be closed
+		// 底层连接关闭时同步关闭
 		for err == nil {
 			var rep openIPCReply
 			if err = conn.ReadJSON(&rep); err != nil {
-				// some buggy messages from Amazon servers
+				// 处理 Amazon 服务器中的异常消息
 				if errors.Is(err, io.ErrUnexpectedEOF) {
 					continue
 				}
@@ -102,7 +102,7 @@ func openIPCClient(rawURL string, query url.Values) (core.Producer, error) {
 
 			switch rep.Reply {
 			case "webrtc_answer":
-				// 6. Get answer
+				// 6. 获取应答
 				var sd pion.SessionDescription
 				if err = json.Unmarshal(rep.Data, &sd); err != nil {
 					break
@@ -127,7 +127,7 @@ func openIPCClient(rawURL string, query url.Values) (core.Producer, error) {
 				sendAnswer.Done(nil)
 
 			case "webrtc_candidate":
-				// 7. Continue to receiving candidates
+				// 7. 继续接收候选地址
 				var ci pion.ICECandidateInit
 				if err = json.Unmarshal(rep.Data, &ci); err != nil {
 					break

@@ -130,7 +130,7 @@ func (p *Producer) Start() error {
 		if recv := receivers[pkt.PayloadType]; recv != nil {
 			switch recv.Codec.Name {
 			case core.CodecH264, core.CodecH265:
-				// timestamp = seconds x 1000000
+				// 时间戳 = 秒数 × 1000000
 				pkt = &rtp.Packet{
 					Header: rtp.Header{
 						Timestamp: uint32(uint64(pkt.Timestamp) * 90000 / 1000000),

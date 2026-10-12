@@ -10,10 +10,10 @@ import (
 )
 
 func NewWriter(w io.Writer, foreground, background, text string) io.Writer {
-	// once clear screen
+	// 首次清空屏幕
 	_, _ = w.Write([]byte(csiClear))
 
-	// every frame - move to home
+	// 每帧将光标移到起始位置
 	a := &writer{wr: w, buf: []byte(csiHome)}
 
 	// https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -61,7 +61,7 @@ func NewWriter(w io.Writer, foreground, background, text string) io.Writer {
 	a.pre = len(a.buf) // save prefix size
 
 	if len(text) == 1 {
-		// fast 1 symbol version
+		// 快速的单字符版本
 		a.text = func(_, _, _ uint32) {
 			a.buf = append(a.buf, text[0])
 		}
@@ -136,7 +136,7 @@ func (a *writer) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// appendEsc - append ESC code to buffer, and skip duplicates
+// appendEsc 向缓冲区添加 ESC 转义码，并跳过重复项
 func (a *writer) appendEsc(s string) {
 	if a.esc != s {
 		a.esc = s
@@ -165,7 +165,7 @@ func xterm256color(r, g, b uint8, n int) (index uint8) {
 	return
 }
 
-// sqDiff - just like from image/color/color.go
+// sqDiff 与 image/color/color.go 的实现相同
 func sqDiff(x, y uint8) uint16 {
 	d := uint16(x - y)
 	//return d

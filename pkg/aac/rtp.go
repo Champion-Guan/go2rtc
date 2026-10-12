@@ -13,7 +13,7 @@ func RTPDepay(handler core.HandlerFunc) core.HandlerFunc {
 	var timestamp uint32
 
 	return func(packet *rtp.Packet) {
-		// support ONLY 2 bytes header size!
+		// 仅支持 2 字节的头部
 		// streamtype=5;profile-level-id=1;mode=AAC-hbr;sizelength=13;indexlength=3;indexdeltalength=3;config=1408
 		// https://datatracker.ietf.org/doc/html/rfc3640
 		headersSize := binary.BigEndian.Uint16(packet.Payload) >> 3
@@ -21,7 +21,7 @@ func RTPDepay(handler core.HandlerFunc) core.HandlerFunc {
 		//log.Printf("[RTP/AAC] units: %d, size: %4d, ts: %10d, %t", headersSize/2, len(packet.Payload), packet.Timestamp, packet.Marker)
 
 		if len(packet.Payload) < int(2+headersSize) {
-			// In very rare cases noname cameras may send data not according to the standard
+			// 极少数无品牌摄像头可能发送不符合标准的数据
 			// https://github.com/AlexxIT/go2rtc/issues/1328
 			if IsADTS(packet.Payload) {
 				clone := *packet
@@ -73,9 +73,9 @@ func RTPPay(handler core.HandlerFunc) core.HandlerFunc {
 			return
 		}
 
-		// support ONLY one unit in payload
+		// 负载仅支持一个单元
 		auSize := uint16(len(packet.Payload))
-		// 2 bytes header size + 2 bytes first payload size
+		// 2 字节头长度 + 2 字节首个载荷长度
 		payload := make([]byte, 2+2+auSize)
 		payload[1] = 16 // header size in bits
 		binary.BigEndian.PutUint16(payload[2:], auSize<<3)
@@ -110,7 +110,7 @@ func ADTStoRTP(src []byte) (dst []byte) {
 }
 
 func RTPTimeSize(b []byte) uint32 {
-	// convert RTP header size to units count
+	// 将 RTP 头大小转换为单元数量
 	units := binary.BigEndian.Uint16(b) >> 4
 	return uint32(units) * AUTime
 }

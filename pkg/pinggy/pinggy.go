@@ -122,7 +122,7 @@ func proxy(conn1 net.Conn, address string) {
 	io.Copy(conn1, conn2)
 }
 
-// DialTLS like ssh.Dial but with TLS
+// DialTLS 类似 ssh.Dial，但使用 TLS
 //func DialTLS(network, addr, sni string, config *ssh.ClientConfig) (*ssh.Client, error) {
 //	conn, err := net.DialTimeout(network, addr, config.Timeout)
 //	if err != nil {

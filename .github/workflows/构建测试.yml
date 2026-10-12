@@ -1,0 +1,104 @@
+name: 测试构建和运行
+
+on:
+#  push:
+#    branches:
+#      - '*'
+#  pull_request:
+#  merge_group:
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        arch: [amd64, arm64]
+
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    env:
+      GOARCH: ${{ matrix.arch }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: 构建 Go 可执行文件
+        run: go build -ldflags "-s -w" -trimpath -o ./go2rtc
+
+      - name: 测试 Go 可执行文件：linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+            if [ "${{ matrix.arch }}" = "amd64" ]; then
+              ./go2rtc -version
+            else
+              sudo apt-get update && sudo apt-get install -y qemu-user-static
+              sudo cp /usr/bin/qemu-aarch64-static .
+              sudo chown $USER:$USER ./qemu-aarch64-static
+              qemu-aarch64-static ./go2rtc -version
+            fi
+      - name: 测试 Go 可执行文件：macos
+        if: matrix.os == 'macos-latest'
+        run: |
+            if [ "${{ matrix.arch }}" = "amd64" ]; then
+              ./go2rtc -version
+            else
+              echo "macOS 暂不支持 ARM64 架构"
+            fi
+      - name: 测试 Go 可执行文件：windows
+        if: matrix.os == 'windows-latest'
+        run: |
+            if ("${{ matrix.arch }}" -eq "amd64") {
+                .\go2rtc* -version
+            } else {
+                Write-Host "Windows 暂不支持 ARM64 架构"
+            }
+  docker-test:
+    strategy:
+      matrix:
+        platform:
+          - amd64
+          - "386"
+          - arm/v7
+          - arm64/v8
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      - name: 配置 QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: 配置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: 构建并推送
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: 容器/Dockerfile
+          platforms: linux/${{ matrix.platform }}
+          push: false
+          load: true
+          tags: go2rtc-${{ matrix.platform }}
+      - name: 测试运行
+        run: |
+          docker run --platform=linux/${{ matrix.platform }} --rm go2rtc-${{ matrix.platform }} go2rtc -version
+
+      - name: 构建并推送硬件镜像
+        if: matrix.platform == 'amd64'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: 容器/硬件加速.Dockerfile
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: go2rtc-${{ matrix.platform }}-hardware
+      - name: 测试运行
+        if: matrix.platform == 'amd64'
+        run: |
+          docker run --platform=linux/${{ matrix.platform }} --rm go2rtc-${{ matrix.platform }}-hardware go2rtc -version

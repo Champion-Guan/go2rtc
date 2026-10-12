@@ -165,17 +165,17 @@ func (c *TuyaMqttClient) Stop() {
 	c.closed = true
 }
 
-// WakeUp sends a wake-up signal to battery-powered cameras (LowPower mode).
-// The camera wakes up and starts responding immediately - we don't wait for dps[149].
-// Note: LowPower cameras sleep after ~3 minutes of inactivity.
+// WakeUp 向低功耗电池摄像头发送唤醒信号。
+// 摄像头唤醒后立即响应，无需等待 dps[149]。
+// 注意：低功耗摄像头约在闲置 3 分钟后休眠。
 func (c *TuyaMqttClient) WakeUp(localKey string) error {
-	// Calculate CRC32 of localKey as wake-up payload
+	// 计算本地密钥的 CRC32，作为唤醒负载
 	crc := crc32.ChecksumIEEE([]byte(localKey))
 
-	// Convert to hex string
+	// 转换为十六进制字符串
 	hexStr := fmt.Sprintf("%08x", crc)
 
-	// Convert hex string to byte array (2 chars at a time)
+	// 每两个字符转换为一个字节
 	payload := make([]byte, len(hexStr)/2)
 	for i := 0; i < len(hexStr); i += 2 {
 		b, err := hex.DecodeString(hexStr[i : i+2])
@@ -185,15 +185,15 @@ func (c *TuyaMqttClient) WakeUp(localKey string) error {
 		payload[i/2] = b[0]
 	}
 
-	// Publish to wake-up topic: m/w/{deviceId}
+	// 向唤醒主题 m/w/{deviceId} 发布
 	wakeUpTopic := fmt.Sprintf("m/w/%s", c.deviceId)
 	token := c.client.Publish(wakeUpTopic, 1, false, payload)
 	if token.Wait() && token.Error() != nil {
 		return fmt.Errorf("failed to publish wake-up message: %w", token.Error())
 	}
 
-	// Subscribe to lowPower topic to receive dps[149] status updates
-	// (we don't wait for this signal - camera responds immediately)
+	// 订阅低功耗主题，接收 dps[149] 状态更新
+	// （不等待此信号，摄像头会立即响应）
 	lowPowerTopic := fmt.Sprintf("smart/decrypt/in/%s", c.deviceId)
 	if token := c.client.Subscribe(lowPowerTopic, 1, c.onLowPowerMessage); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("failed to subscribe to lowPower topic: %w", token.Error())
@@ -203,12 +203,12 @@ func (c *TuyaMqttClient) WakeUp(localKey string) error {
 }
 
 func (c *TuyaMqttClient) SendOffer(sdp string, streamResolution string, streamType int, isHEVC bool) error {
-	// Map Skill StreamType to MQTT stream_type values
-	// streamType comes from GetStreamType() and uses Skill StreamType values:
+	// 将 Skill 流类型映射为 MQTT stream_type
+	// streamType 来自 GetStreamType，使用 Skill 流类型值：
 	// - mainStream = 2 (HD)
 	// - substream = 4 (SD)
 	//
-	// But MQTT expects mapped stream_type values:
+	// MQTT 则要求映射后的 stream_type 值：
 	// - mainStream (2) → stream_type: 0
 	// - substream (4) → stream_type: 1
 
@@ -238,7 +238,7 @@ func (c *TuyaMqttClient) SendCandidate(candidate string) error {
 }
 
 func (c *TuyaMqttClient) SendResolution(resolution int) error {
-	// Check if camera supports clarity switching
+	// 检查摄像头是否支持清晰度切换
 	isClaritySupported := (c.webrtcVersion & (1 << 5)) != 0
 	if !isClaritySupported {
 		return nil
@@ -258,7 +258,7 @@ func (c *TuyaMqttClient) SendSpeaker(speaker int) error {
 		return err
 	}
 
-	// Wait for camera response
+	// 等待摄像头响应
 	if err := c.speakerWaiter.Wait(); err != nil {
 		return fmt.Errorf("speaker wait failed: %w", err)
 	}
@@ -288,7 +288,7 @@ func (c *TuyaMqttClient) onMessage(client mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
-	// Filter by session ID to prevent processing messages from other sessions
+	// 按会话标识过滤，避免处理其他会话的消息
 	if rmqtt.Data.Header.SessionID != c.sessionId {
 		return
 	}
@@ -311,16 +311,16 @@ func (c *TuyaMqttClient) onLowPowerMessage(client mqtt.Client, msg mqtt.Message)
 		return
 	}
 
-	// Check if protocol is 4 and dps[149] is true
+	// 检查协议是否为 4，以及 dps[149] 是否为 true
 	// https://developer.tuya.com/en/docs/iot-device-dev/doorbell_solution?id=Kayamyivh15ox#title-2-Battery
 	if message.Protocol == 4 {
 		if val, ok := message.Data.Dps["149"]; ok {
 			if ready, ok := val.(bool); ok && ready {
-				// Camera is now ready after wake-up (dps[149]:true received).
-				// However, we don't wait for this signal (like ismartlife.me doesn't either).
-				// The camera starts responding immediately after WakeUp() is called,
-				// so we proceed with the connection without blocking.
-				// This waiter is kept for potential future use.
+				// 收到 dps[149]:true 后，摄像头已经就绪。
+				// 与 ismartlife.me 一样，此处不等待该信号。
+				// 摄像头在调用 WakeUp 后立即响应，
+				// 因此直接继续连接，避免阻塞。
+				// 保留此等待器以供未来使用。
 				c.wakeupWaiter.Done(nil)
 			}
 		}
@@ -344,7 +344,7 @@ func (c *TuyaMqttClient) onMqttCandidate(msg *MqttMessage) {
 		return
 	}
 
-	// fix candidates
+	// 修正候选地址
 	candidateFrame.Candidate = strings.TrimPrefix(candidateFrame.Candidate, "a=")
 	candidateFrame.Candidate = strings.TrimSuffix(candidateFrame.Candidate, "\r\n")
 

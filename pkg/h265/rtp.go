@@ -25,7 +25,7 @@ func RTPDepay(codec *core.Codec, handler core.HandlerFunc) core.HandlerFunc {
 		nuType := (data[0] >> 1) & 0x3F
 		//log.Printf("[RTP] codec: %s, nalu: %2d, size: %6d, ts: %10d, pt: %2d, ssrc: %d, seq: %d, %v", track.Codec.Name, nuType, len(packet.Payload), packet.Timestamp, packet.PayloadType, packet.SSRC, packet.SequenceNumber, packet.Marker)
 
-		// Fix for RtspServer https://github.com/AlexxIT/go2rtc/issues/244
+		// 修正 RTSP 服务器：https://github.com/AlexxIT/go2rtc/issues/244
 		if packet.Marker && len(data) < h264.PSMaxSize {
 			switch nuType {
 			case NALUTypeVPS, NALUTypeSPS, NALUTypePPS:
@@ -35,8 +35,8 @@ func RTPDepay(codec *core.Codec, handler core.HandlerFunc) core.HandlerFunc {
 			}
 		}
 
-		// when we collect data into one buffer, we need to make sure
-		// that all of it falls into the same sequence
+		// 将数据收集到同一缓冲区时，需确保
+		// 全部数据属于同一个序列
 		if len(buf) > 0 && packet.SequenceNumber-seqNum != 1 {
 			//log.Printf("broken H265 sequence")
 			buf = buf[:0] // drop data
@@ -50,7 +50,7 @@ func RTPDepay(codec *core.Codec, handler core.HandlerFunc) core.HandlerFunc {
 			case 0b10: // begin
 				nuType = data[2] & 0x3F
 
-				// push PS data before keyframe
+				// 关键帧前推送参数集数据
 				if len(buf) == 0 && nuType >= 19 && nuType <= 21 {
 					buf = append(buf, ps...)
 				}
@@ -84,8 +84,8 @@ func RTPDepay(codec *core.Codec, handler core.HandlerFunc) core.HandlerFunc {
 
 				binary.BigEndian.PutUint32(buf[nuStart:], uint32(len(buf)-nuStart-4))
 			case 0b11: // wrong RFC 7798 realisation from OpenIPC project
-				// A non-fragmented NAL unit MUST NOT be transmitted in one FU; i.e.,
-				// the Start bit and End bit must not both be set to 1 in the same FU
+				// 未分片 NAL 单元不得用单个 FU 传输，
+				// 同一 FU 的起始位和结束位不能同时为 1
 				// header.
 				nuType = data[2] & 0x3F
 				buf = binary.BigEndian.AppendUint32(buf, uint32(len(data))-1) // NAL unit size
@@ -97,7 +97,7 @@ func RTPDepay(codec *core.Codec, handler core.HandlerFunc) core.HandlerFunc {
 			buf = append(buf, data...)
 		}
 
-		// collect all NAL Units for Access Unit
+		// 收集同一访问单元的全部 NAL 单元
 		if !packet.Marker {
 			return
 		}
@@ -146,7 +146,7 @@ func RTPPay(mtu uint16, handler core.HandlerFunc) core.HandlerFunc {
 	}
 }
 
-// SafariPay - generate Safari friendly payload for H265
+// SafariPay 为 H265 生成兼容 Safari 的负载
 // https://github.com/AlexxIT/Blog/issues/5
 func SafariPay(mtu uint16, handler core.HandlerFunc) core.HandlerFunc {
 	sequencer := rtp.NewRandomSequencer()
@@ -158,7 +158,7 @@ func SafariPay(mtu uint16, handler core.HandlerFunc) core.HandlerFunc {
 			return
 		}
 
-		// protect original packets from modification
+		// 避免修改原始数据包
 		au := make([]byte, len(packet.Payload))
 		copy(au, packet.Payload)
 
@@ -167,7 +167,7 @@ func SafariPay(mtu uint16, handler core.HandlerFunc) core.HandlerFunc {
 		for i := 0; i < len(au); {
 			size := int(binary.BigEndian.Uint32(au[i:])) + 4
 
-			// convert AVC to Annex-B
+			// 将 AVC 转换为 Annex-B
 			au[i] = 0
 			au[i+1] = 0
 			au[i+2] = 0
@@ -185,7 +185,7 @@ func SafariPay(mtu uint16, handler core.HandlerFunc) core.HandlerFunc {
 			i += size
 		}
 
-		// rtp.Packet payload
+		// rtp.Packet 负载
 		b := make([]byte, 1, size)
 		size-- // minus header byte
 

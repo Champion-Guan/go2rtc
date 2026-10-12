@@ -1,4 +1,4 @@
-// Package h264 - AVCC format related functions
+// h264 包：AVCC 格式相关函数
 package h264
 
 import (
@@ -16,7 +16,7 @@ func RepairAVCC(codec *core.Codec, handler core.HandlerFunc) core.HandlerFunc {
 	ps := JoinNALU(sps, pps)
 
 	return func(packet *rtp.Packet) {
-		// this can happen for FLV from FFmpeg
+		// 来自 FFmpeg 的 FLV 可能出现此情况
 		if NALUType(packet.Payload) == NALUTypeSEI {
 			size := int(binary.BigEndian.Uint32(packet.Payload)) + 4
 			packet.Payload = packet.Payload[size:]
@@ -53,10 +53,10 @@ func JoinNALU(nalus ...[]byte) (avcc []byte) {
 func SplitNALU(avcc []byte) [][]byte {
 	var nals [][]byte
 	for {
-		// get AVC length
+		// 获取 AVC 长度
 		size := int(binary.BigEndian.Uint32(avcc)) + 4
 
-		// check if multiple items in one packet
+		// 检查单个包是否包含多个条目
 		if size < len(avcc) {
 			nals = append(nals, avcc[:size])
 			avcc = avcc[size:]

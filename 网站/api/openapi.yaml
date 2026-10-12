@@ -1,0 +1,1197 @@
+openapi: 3.1.0
+
+info:
+  title: go2rtc
+  version: 1.9.13
+  license: { name: MIT,url: https://opensource.org/licenses/MIT }
+  contact: { url: https://github.com/AlexxIT/go2rtc }
+  description: |
+    功能丰富的摄像头流媒体应用，支持 RTSP、RTMP、HTTP-FLV、WebRTC、MSE、HLS、MP4、MJPEG、HomeKit、FFmpeg 等。
+
+servers:
+  - url: http://localhost:1984
+
+tags:
+  - name: 应用
+    description: "[模块： API](https://github.com/AlexxIT/go2rtc#module-api)"
+  - name: 配置
+    description: "[配置](https://github.com/AlexxIT/go2rtc#configuration)"
+  - name: 流列表
+    description: "[模块： Streams](https://github.com/AlexxIT/go2rtc#module-streams)"
+  - name: 输出流
+  - name: HLS
+  - name: 快照
+  - name: 输入流
+  - name: WebSocket
+    description: "WebSocket 接口：`/api/ws`（参见 `api/说明书.md`）"
+  - name: 设备发现
+  - name: HomeKit
+  - name: ONVIF
+  - name: RTSPtoWebRTC
+  - name: WebTorrent
+    description: "[模块： WebTorrent](https://github.com/AlexxIT/go2rtc#module-webtorrent)"
+  - name: FFmpeg
+  - name: Debug
+
+components:
+  parameters:
+    stream_src_path:
+      name: src
+      in: path
+      description: 源流名称
+      required: true
+      schema: { type: string }
+      example: camera1
+
+    stream_dst_path:
+      name: dst
+      in: path
+      description: 目标流名称
+      required: true
+      schema: { type: string }
+      example: camera1
+
+    stream_src_query:
+      name: src
+      in: query
+      description: 源流名称
+      required: true
+      schema: { type: string }
+      example: camera1
+
+    hls_session_id_path:
+      name: id
+      in: path
+      description: HLS 会话标识，通过查询参数 `id` 传入
+      required: true
+      schema: { type: string }
+      example: DvmHdd9w
+
+    mp4_filter:
+      name: mp4
+      in: query
+      description: MP4 编码过滤器
+      required: false
+      schema:
+        type: string
+        enum: [ "", flac, all ]
+      example: flac
+
+    video_filter:
+      name: video
+      in: query
+      description: 视频编码过滤器
+      schema:
+        type: string
+        enum: [ "", all, h264, h265, mjpeg ]
+      example: h264,h265
+
+    audio_filter:
+      name: audio
+      in: query
+      description: 音频编码过滤器
+      schema:
+        type: string
+        enum: [ "", all, aac, opus, pcm, pcmu, pcma ]
+      example: aac
+
+  responses:
+    discovery:
+      description: ""
+      content:
+        application/json:
+          example: { streams: [ { "name": "Camera 1","url": "..." } ] }
+
+    webtorrent:
+      description: ""
+      content:
+        application/json:
+          example: { share: AKDypPy4zz, pwd: H0Km1HLTTP }
+
+paths:
+  /api:
+    get:
+      summary: 获取应用信息
+      tags: [ 应用 ]
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  config_path: { type: string, example: "/config/go2rtc.yaml" }
+                  host: { type: string, example: "192.168.1.123:1984" }
+                  rtsp:
+                    type: object
+                    properties:
+                      listen: { type: string, example: ":8554" }
+                      default_query: { type: string, example: "video&audio" }
+                  version: { type: string, example: "1.9.12" }
+
+  /api/exit:
+    post:
+      summary: 关闭应用
+      tags: [ 应用 ]
+      parameters:
+        - name: code
+          in: query
+          description: 应用退出码
+          required: false
+          schema: { type: integer }
+          example: 100
+      responses:
+        default:
+          description: ""
+
+  /api/restart:
+    post:
+      summary: 重启后台进程
+      description: 重启后台进程。
+      tags: [ 应用 ]
+      responses:
+        default:
+          description: ""
+
+  /api/log:
+    get:
+      summary: 获取内存日志缓冲区
+      description: |
+        返回内存环形缓冲区中的当前日志。
+      tags: [ 应用 ]
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/jsonlines:
+              example: |
+                {"level":"info","version":"1.9.13","platform":"linux/amd64","revision":"dfe4755","time":1766841087331,"message":"go2rtc"}
+    delete:
+      summary: 清空内存日志缓冲区
+      tags: [ 应用 ]
+      responses:
+        "200":
+          description: ""
+          content:
+            text/plain: { example: "" }
+
+  /api/config:
+    get:
+      summary: 获取主配置文件内容
+      tags: [ 配置 ]
+      responses:
+        "200":
+          description: ""
+          content:
+            application/yaml: { example: "streams:..." }
+        "404":
+          description: 未找到配置文件
+    post:
+      summary: 重写主配置文件
+      tags: [ 配置 ]
+      requestBody:
+        content:
+          "*/*": { example: "streams:..." }
+      responses:
+        default:
+          description: ""
+    patch:
+      summary: 合并修改到主配置文件
+      tags: [ 配置 ]
+      requestBody:
+        content:
+          "*/*": { example: "streams:..." }
+      responses:
+        default:
+          description: ""
+
+
+
+  /api/streams:
+    get:
+      summary: 获取全部流信息
+      tags: [ 流列表 ]
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    producers:
+                      type: array
+                    consumers:
+                      type: array
+    put:
+      summary: 创建流
+      tags: [ 流列表 ]
+      parameters:
+        - name: src
+          in: query
+          description: 流源地址（URI）
+          required: true
+          schema: { type: string }
+          example: "rtsp://rtsp:12345678@192.168.1.123/av_stream/ch0"
+        - name: name
+          in: query
+          description: 流名称
+          required: false
+          schema: { type: string }
+          example: camera1
+      responses:
+        default:
+          description: ""
+    patch:
+      summary: 更新流源
+      tags: [ 流列表 ]
+      parameters:
+        - name: src
+          in: query
+          description: 流源地址（URI）
+          required: true
+          schema: { type: string }
+          example: "rtsp://rtsp:12345678@192.168.1.123/av_stream/ch0"
+        - name: name
+          in: query
+          description: 流名称
+          required: true
+          schema: { type: string }
+          example: camera1
+      responses:
+        default:
+          description: ""
+    delete:
+      summary: 删除流
+      tags: [ 流列表 ]
+      parameters:
+        - name: src
+          in: query
+          description: 流名称
+          required: true
+          schema: { type: string }
+          example: camera1
+      responses:
+        default:
+          description: ""
+    post:
+      summary: 将源流发送到目标
+      description: "[向摄像头播放音频](https://github.com/AlexxIT/go2rtc#stream-to-camera)"
+      tags: [ 流列表 ]
+      parameters:
+        - name: src
+          in: query
+          description: 流源地址（URI）
+          required: true
+          schema: { type: string }
+          example: "ffmpeg:http://example.com/song.mp3#audio=pcma#input=file"
+        - name: dst
+          in: query
+          description: 目标流名称
+          required: true
+          schema: { type: string }
+          example: camera1
+      responses:
+        default:
+          description: ""
+
+  /api/streams.dot:
+    get:
+      summary: 获取 Graphviz DOT 格式流拓扑
+      tags: [ 流列表 ]
+      parameters:
+        - name: src
+          in: query
+          description: 按流名称过滤，重复 `src` 可包含多个流。
+          required: false
+          schema: { type: string }
+          example: camera1
+      responses:
+        "200":
+          description: 成功
+          content:
+            text/vnd.graphviz:
+              example: "digraph { ... }"
+
+  /api/preload:
+    get:
+      summary: 获取全部预加载流
+      tags: [ 流列表 ]
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    consumer:
+                      type: object
+                    query:
+                      type: string
+                      example: "video&audio"
+    put:
+      summary: 预加载新流
+      tags: [ 流列表 ]
+      parameters:
+        - name: src
+          in: query
+          description: 流源名称
+          required: true
+          schema: { type: string }
+          example: "camera1"
+        - name: video
+          in: query
+          description: 视频编码过滤器
+          required: false
+          schema: { type: string }
+          example: all,h264,h265,...
+        - name: audio
+          in: query
+          description: 音频编码过滤器
+          required: false
+          schema: { type: string }
+          example: all,aac,opus,...
+        - name: microphone
+          in: query
+          description: 麦克风编码过滤器
+          required: false
+          schema: { type: string }
+          example: all,aac,opus,...
+      responses:
+        default:
+          description: ""
+    delete:
+      summary: 删除预加载流
+      tags: [ 流列表 ]
+      parameters:
+        - name: src
+          in: query
+          description: 流源名称
+          required: true
+          schema: { type: string }
+          example: "camera1"
+      responses:
+        default:
+          description: ""
+
+  /api/schemes:
+    get:
+      summary: 获取受支持的源地址协议
+      tags: [ 流列表 ]
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: string }
+              example: [ rtsp, rtmp, webrtc, ffmpeg, hass ]
+
+
+  /api/streams?src={src}:
+    get:
+      summary: 获取 JSON 格式流信息
+      tags: [ 输出流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    producers:
+                      type: array
+                      items: { type: object }
+                    consumers:
+                      type: array
+                      items: { type: object }
+
+  /api/webrtc?src={src}:
+    post:
+      summary: 获取 WebRTC 格式流（WHEP）
+      description: "[模块： WebRTC](https://github.com/AlexxIT/go2rtc#module-webrtc)"
+      tags: [ 输出流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+      requestBody:
+        description: |
+          支持：
+          - JSON 格式 (`Content-Type: application/json`)
+          - WHEP 标准 (`Content-Type: application/sdp`)
+          - 原始 SDP (`Content-Type: anything`)
+        required: true
+        content:
+          application/json: { example: { type: offer, sdp: "v=0..." } }
+          "application/sdp": { example: "v=0..." }
+          "*/*": { example: "v=0..." }
+      responses:
+        "200":
+          description: "JSON 或原始 SDP 请求的响应"
+          content:
+            application/json: { example: { type: answer, sdp: "v=0..." } }
+            application/sdp: { example: "v=0..." }
+        "201":
+          description: "`Content-Type: application/sdp` 请求的响应"
+          content:
+            application/sdp: { example: "v=0..." }
+
+  /api/stream.mp4?src={src}:
+    get:
+      summary: 获取 MP4 格式流（HTTP 渐进式播放）
+      description: "[模块： MP4](https://github.com/AlexxIT/go2rtc#module-mp4)"
+      tags: [ 输出流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+        - name: duration
+          in: query
+          description: 限制流时长，单位为秒
+          required: false
+          schema: { type: string }
+          example: 15
+        - name: filename
+          in: query
+          description: 以此文件名下载
+          required: false
+          schema: { type: string }
+          example: camera1.mp4
+        - name: rotate
+          in: query
+          description: "视频旋转角度，支持 90、180、270。"
+          required: false
+          schema: { type: integer, enum: [ 90, 180, 270 ] }
+        - name: scale
+          in: query
+          description: 按 `width:height` 格式缩放视频
+          required: false
+          schema: { type: string, example: "1280:720" }
+        - $ref: "#/components/parameters/mp4_filter"
+        - $ref: "#/components/parameters/video_filter"
+        - $ref: "#/components/parameters/audio_filter"
+      responses:
+        200:
+          description: ""
+          content: { video/mp4: { example: "" } }
+
+  /api/stream.m3u8?src={src}:
+    get:
+      summary: 获取 HLS 格式流
+      description: "[模块： HLS](https://github.com/AlexxIT/go2rtc#module-hls)"
+      tags: [ Consume stream, HLS ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+        - $ref: "#/components/parameters/mp4_filter"
+        - $ref: "#/components/parameters/video_filter"
+        - $ref: "#/components/parameters/audio_filter"
+      responses:
+        200:
+          description: ""
+          content: { application/vnd.apple.mpegurl: { example: "" } }
+
+  /api/hls/playlist.m3u8?id={id}:
+    get:
+      summary: 获取活动会话的 HLS 媒体播放列表
+      tags: [ HLS ]
+      parameters:
+        - $ref: "#/components/parameters/hls_session_id_path"
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/vnd.apple.mpegurl: { example: "" }
+        "404":
+          description: 未找到会话
+
+  /api/hls/segment.ts?id={id}:
+    get:
+      summary: 获取活动会话的 HLS MPEG-TS 分片
+      tags: [ HLS ]
+      parameters:
+        - $ref: "#/components/parameters/hls_session_id_path"
+      responses:
+        "200":
+          description: 成功
+          content:
+            video/mp2t: { example: "" }
+        "404":
+          description: 未找到分片或会话
+
+  /api/hls/init.mp4?id={id}:
+    get:
+      summary: 获取活动会话的 HLS fMP4 初始化分片
+      tags: [ HLS ]
+      parameters:
+        - $ref: "#/components/parameters/hls_session_id_path"
+      responses:
+        "200":
+          description: 成功
+          content:
+            video/mp4: { example: "" }
+        "404":
+          description: 未找到分片或会话
+
+  /api/hls/segment.m4s?id={id}:
+    get:
+      summary: 获取活动会话的 HLS fMP4 媒体分片
+      tags: [ HLS ]
+      parameters:
+        - $ref: "#/components/parameters/hls_session_id_path"
+      responses:
+        "200":
+          description: 成功
+          content:
+            video/iso.segment: { example: "" }
+        "404":
+          description: 未找到分片或会话
+
+  /api/stream.mjpeg?src={src}:
+    get:
+      summary: 获取 MJPEG 格式流
+      description: "[模块： MJPEG](https://github.com/AlexxIT/go2rtc#module-mjpeg)"
+      tags: [ 输出流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+      responses:
+        200:
+          description: ""
+          content: { multipart/x-mixed-replace: { example: "" } }
+
+  /api/stream.ascii?src={src}:
+    get:
+      summary: 获取字符画格式流（ANSI 转义码）
+      description: "[模块： MJPEG](https://github.com/AlexxIT/go2rtc#module-mjpeg)"
+      tags: [ 输出流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+        - name: color
+          in: query
+          description: 前景色模式（`8`、`256`、`rgb` 或 ANSI SGR 代码）
+          required: false
+          schema: { type: string }
+        - name: back
+          in: query
+          description: 背景色模式（`8`、`256`、`rgb` 或 ANSI SGR 代码）
+          required: false
+          schema: { type: string }
+        - name: text
+          in: query
+          description: 字符集预设（空值/默认、`block`）或自定义字符
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: 成功
+          content:
+            text/plain: { example: "" }
+        "404":
+          description: 未找到流
+
+  /api/stream.y4m?src={src}:
+    get:
+      summary: 获取 YUV4MPEG2 格式流（y4m）
+      tags: [ 输出流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/octet-stream: { example: "" }
+        "404":
+          description: 未找到流
+
+  /api/stream.ts?src={src}:
+    get:
+      summary: 获取 MPEG-TS 格式流
+      tags: [ 输出流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+      responses:
+        "200":
+          description: 成功
+          content:
+            video/mp2t: { example: "" }
+        "404":
+          description: 未找到流
+
+  /api/stream.aac?src={src}:
+    get:
+      summary: 获取 AAC（ADTS）格式流音频
+      tags: [ 输出流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+      responses:
+        "200":
+          description: 成功
+          content:
+            audio/aac: { example: "" }
+        "404":
+          description: 未找到流
+
+  /api/stream.flv?src={src}:
+    get:
+      summary: 获取 FLV 格式流
+      tags: [ 输出流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+      responses:
+        "200":
+          description: 成功
+          content:
+            video/x-flv: { example: "" }
+        "404":
+          description: 未找到流
+
+  /api/frame.jpeg?src={src}:
+    get:
+      summary: 获取 JPEG 格式快照
+      description: "[模块： MJPEG](https://github.com/AlexxIT/go2rtc#module-mjpeg)"
+      tags: [ 快照 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+        - name: name
+          in: query
+          description: `src` 为地址时，可选指定要创建或更新的流名称
+          required: false
+          schema: { type: string }
+        - name: width
+          in: query
+          description: "缩放输出宽度，别名 `w`"
+          required: false
+          schema: { type: integer, minimum: 1 }
+        - name: height
+          in: query
+          description: "缩放输出高度，别名 `h`"
+          required: false
+          schema: { type: integer, minimum: 1 }
+        - name: rotate
+          in: query
+          description: "输出旋转角度，支持 90、180、270。"
+          required: false
+          schema: { type: integer, enum: [ 90, 180, 270 ] }
+        - name: hardware
+          in: query
+          description: "FFmpeg 快照转码的硬件加速引擎，别名 `hw`"
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: ""
+          content:
+            image/jpeg: { example: "" }
+
+  /api/frame.mp4?src={src}:
+    get:
+      summary: 获取 MP4 格式快照
+      description: "[模块： MP4](https://github.com/AlexxIT/go2rtc#module-mp4)"
+      tags: [ 快照 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+        - name: filename
+          in: query
+          description: 以此文件名下载
+          required: false
+          schema: { type: string }
+          example: camera1.mp4
+      responses:
+        200:
+          description: ""
+          content:
+            video/mp4: { example: "" }
+
+
+
+  /api/webrtc?dst={dst}:
+    post:
+      summary: 接收 WebRTC 格式推流（WHIP）
+      description: "[输入： WebRTC/WHIP](https://github.com/AlexxIT/go2rtc#incoming-webrtcwhip)"
+      tags: [ 输入流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_dst_path"
+      responses:
+        "201":
+          description: 已创建
+          headers:
+            Location:
+              description: 会话资源地址
+              schema: { type: string }
+          content:
+            application/sdp: { example: "v=0..." }
+        "404":
+          description: 未找到流
+
+  /api/stream?dst={dst}:
+    post:
+      summary: 自动识别格式并接收推流
+      description: |
+        自动识别输入源格式，用于将流推送到已有的 `dst` 流。
+      tags: [ 输入流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_dst_path"
+      responses:
+        default:
+          description: ""
+
+  /api/stream.flv?dst={dst}:
+    post:
+      summary: 接收 FLV 格式推流
+      description: "[输入源](https://github.com/AlexxIT/go2rtc#incoming-sources)"
+      tags: [ 输入流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_dst_path"
+      responses:
+        default:
+          description: ""
+
+  /api/stream.ts?dst={dst}:
+    post:
+      summary: 接收 MPEG-TS 格式推流
+      description: "[输入源](https://github.com/AlexxIT/go2rtc#incoming-sources)"
+      tags: [ 输入流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_dst_path"
+      responses:
+        default:
+          description: ""
+
+  /api/stream.mjpeg?dst={dst}:
+    post:
+      summary: 接收 MJPEG 格式推流
+      description: "[输入源](https://github.com/AlexxIT/go2rtc#incoming-sources)"
+      tags: [ 输入流 ]
+      parameters:
+        - $ref: "#/components/parameters/stream_dst_path"
+      responses:
+        default:
+          description: ""
+
+
+  /api/ffmpeg:
+    post:
+      summary: 通过 FFmpeg 向流播放文件、直播或合成语音
+      description: |
+        用于向摄像头播放音频场景的辅助接口。
+        必须且只能提供 `file`、`live`、`text` 之一。
+      tags: [ FFmpeg ]
+      parameters:
+        - name: dst
+          in: query
+          description: 目标流名称
+          required: true
+          schema: { type: string }
+          example: camera1
+        - name: file
+          in: query
+          description: 按文件处理的输入地址（`#input=file`）
+          required: false
+          schema: { type: string }
+          example: "http://example.com/song.mp3"
+        - name: live
+          in: query
+          description: 实时输入地址
+          required: false
+          schema: { type: string }
+          example: "http://example.com/live.mp3"
+        - name: text
+          in: query
+          description: 文字转语音文本
+          required: false
+          schema: { type: string }
+          example: "Hello"
+        - name: voice
+          in: query
+          description: 可选合成语音音色，取决于引擎
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: 成功
+        "400":
+          description: 参数无效
+        "404":
+          description: 未找到流
+
+
+  /api/dvrip:
+    get:
+      summary: 发现 DVRIP 摄像头
+      description: "[源： DVRIP](https://github.com/AlexxIT/go2rtc#source-dvrip)"
+      tags: [ 设备发现 ]
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+
+  /api/ffmpeg/devices:
+    get:
+      summary: 发现 FFmpeg USB 设备
+      description: "[源： FFmpeg Device](https://github.com/AlexxIT/go2rtc#source-ffmpeg-device)"
+      tags: [ 设备发现 ]
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+  
+  /api/ffmpeg/hardware:
+    get:
+      summary: 检测 FFmpeg 硬件转码能力
+      description: "[硬件加速](https://github.com/AlexxIT/go2rtc/wiki/Hardware-acceleration)"
+      tags: [ 设备发现 ]
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+  
+  /api/v4l2:
+    get:
+      summary: 发现 V4L2 视频设备（Linux）
+      tags: [ 设备发现 ]
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+  
+  /api/alsa:
+    get:
+      summary: 发现 ALSA 音频设备（Linux）
+      tags: [ 设备发现 ]
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+  
+  /api/gopro:
+    get:
+      summary: 发现 GoPro 摄像头
+      tags: [ 设备发现 ]
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+
+  /api/ring:
+    get:
+      summary: 发现 Ring 摄像头
+      description: |
+        提供 `email`/`password`（可选双重验证 `code`），或提供 `refresh_token`。
+        需要双重验证时，返回 JSON 提示，而不是源列表。
+      tags: [ 设备发现 ]
+      parameters:
+        - name: email
+          in: query
+          required: false
+          schema: { type: string }
+        - name: password
+          in: query
+          required: false
+          schema: { type: string }
+        - name: code
+          in: query
+          required: false
+          schema: { type: string }
+        - name: refresh_token
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json: { example: "" }
+
+  /api/tuya:
+    get:
+      summary: 发现涂鸦摄像头
+      tags: [ 设备发现 ]
+      parameters:
+        - name: region
+          in: query
+          description: 涂鸦接口主机（地区）
+          required: true
+          schema: { type: string }
+          example: "openapi.tuyaus.com"
+        - name: email
+          in: query
+          required: true
+          schema: { type: string }
+        - name: password
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+        "400":
+          description: 参数无效
+        "404":
+          description: 未找到摄像头
+  
+  /api/hass:
+    get:
+      summary: 发现 Home Assistant 摄像头
+      description: "[源： Hass](https://github.com/AlexxIT/go2rtc#source-hass)"
+      tags: [ 设备发现 ]
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+        "404": { description: 未找到 Home Assistant 配置 }
+
+  /api/discovery/homekit:
+    get:
+      summary: 发现 HomeKit 摄像头
+      description: "[源： HomeKit](https://github.com/AlexxIT/go2rtc#source-homekit)"
+      tags: [ 设备发现 ]
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+
+  /api/nest:
+    get:
+      summary: 发现 Nest 摄像头
+      tags: [ 设备发现 ]
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema: { type: string }
+        - name: client_secret
+          in: query
+          required: true
+          schema: { type: string }
+        - name: refresh_token
+          in: query
+          required: true
+          schema: { type: string }
+        - name: project_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+
+  /api/onvif:
+    get:
+      summary: 发现 ONVIF 摄像头
+      description: "[源： ONVIF](https://github.com/AlexxIT/go2rtc#source-onvif)"
+      tags: [ 设备发现 ]
+      parameters:
+        - name: src
+          in: query
+          description: 可选 ONVIF 设备地址，用于枚举配置档
+          required: false
+          schema: { type: string }
+          example: "onvif://user:pass@192.168.1.50:80"
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+
+  /api/roborock:
+    get:
+      summary: 发现石头扫地机器人，需先验证身份
+      description: "[源： Roborock](https://github.com/AlexxIT/go2rtc#source-roborock)"
+      tags: [ 设备发现 ]
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+        "404":
+          description: 未验证身份
+    post:
+      summary: 登录石头账户并发现设备
+      tags: [ 设备发现 ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                password: { type: string }
+              required: [ username, password ]
+      responses:
+        "200": { $ref: "#/components/responses/discovery" }
+
+  /api/homekit:
+    get:
+      summary: 获取 HomeKit 服务器状态
+      tags: [ HomeKit ]
+      parameters:
+        - name: id
+          in: query
+          description: 可选流名称（服务器标识）
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json: { example: "" }
+        "404":
+          description: 未找到服务器
+    post:
+      summary: 配对 HomeKit 摄像头并创建或更新流
+      tags: [ HomeKit ]
+      parameters:
+        - name: id
+          in: query
+          description: 要创建或更新的流名称
+          required: true
+          schema: { type: string }
+        - name: src
+          in: query
+          description: HomeKit 地址，不含配对码
+          required: true
+          schema: { type: string }
+        - name: pin
+          in: query
+          description: HomeKit 配对码
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 成功
+    delete:
+      summary: 取消 HomeKit 摄像头配对并删除流
+      tags: [ HomeKit ]
+      parameters:
+        - name: id
+          in: query
+          description: 流名称 / 服务器标识
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 成功
+        "404":
+          description: 未找到流
+
+  /api/homekit/accessories:
+    get:
+      summary: 获取流的 HomeKit 配件 JSON
+      tags: [ HomeKit ]
+      parameters:
+        - name: id
+          in: query
+          description: 流名称
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/json: { example: { } }
+        "404":
+          description: 未找到流
+
+  /pair-setup:
+    post:
+      summary: HomeKit 配对设置（HAP）
+      description: HomeKit 配件协议接口（TLV8）。
+      tags: [ HomeKit ]
+      requestBody:
+        required: true
+        content:
+          application/pairing+tlv8: { example: "" }
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/pairing+tlv8: { example: "" }
+
+  /pair-verify:
+    post:
+      summary: HomeKit 配对验证（HAP）
+      description: HomeKit 配件协议接口（TLV8）。
+      tags: [ HomeKit ]
+      requestBody:
+        required: true
+        content:
+          application/pairing+tlv8: { example: "" }
+      responses:
+        "200":
+          description: 成功
+          content:
+            application/pairing+tlv8: { example: "" }
+
+
+  /onvif/:
+    get:
+      summary: ONVIF 服务器实现
+      description: ONVIF 协议的简化实现，接收任意子路径请求
+      tags: [ ONVIF ]
+      responses:
+        default:
+          description: ""
+
+
+
+  /stream/:
+    get:
+      summary: RTSPtoWebRTC 服务器实现
+      description: 用于支持 [RTSPtoWebRTC](https://www.home-assistant.io/integrations/rtsp_to_webrtc/) 集成的简单接口
+      tags: [ RTSPtoWebRTC ]
+      responses:
+        default:
+          description: ""
+
+
+  /api/ws:
+    get:
+      summary: WebSocket 接口
+      description: |
+        升级为 WebSocket 并交换 JSON 消息：
+        - 请求： `{ "type": "...", "value": ... }`
+        - 响应： `{ "type": "...", "value": ... }`
+        
+        支持的消息类型取决于已启用模块，参见 `api/说明书.md`。
+      tags: [ WebSocket ]
+      parameters:
+        - name: src
+          in: query
+          description: 流名称（消费者）
+          required: false
+          schema: { type: string }
+        - name: dst
+          in: query
+          description: 流名称（生产者）
+          required: false
+          schema: { type: string }
+      responses:
+        "101": { description: 切换协议 }
+
+
+
+  /api/webtorrent?src={src}:
+    get:
+      summary: 获取 WebTorrent 分享信息
+      tags: [ WebTorrent ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+      responses:
+        200: { $ref: "#/components/responses/webtorrent" }
+    post:
+      summary: 添加 WebTorrent 分享
+      tags: [ WebTorrent ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+      responses:
+        200: { $ref: "#/components/responses/webtorrent" }
+    delete:
+      summary: 删除 WebTorrent 分享
+      tags: [ WebTorrent ]
+      parameters:
+        - $ref: "#/components/parameters/stream_src_path"
+      responses:
+        default: { description: "" }
+
+  /api/webtorrent:
+    get:
+      summary: 获取全部 WebTorrent 分享信息
+      tags: [ WebTorrent ]
+      responses:
+        200: { $ref: "#/components/responses/discovery" }
+
+
+
+  /api/stack:
+    get:
+      summary: 显示未知协程列表
+      tags: [ Debug ]
+      responses:
+        200:
+          description: ""
+          content: { text/plain: { example: "" } }

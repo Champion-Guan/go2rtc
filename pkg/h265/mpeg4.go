@@ -1,4 +1,4 @@
-// Package h265 - MPEG4 format related functions
+// h265 包：MPEG4 格式相关函数
 package h265
 
 import (

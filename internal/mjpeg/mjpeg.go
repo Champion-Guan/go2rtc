@@ -108,7 +108,7 @@ func handlerKeyframe(w http.ResponseWriter, r *http.Request) {
 var cache map[string]cacheEntry
 var cacheMu sync.Mutex
 
-// cacheEntry represents a cached keyframe with its timestamp
+// cacheEntry 表示带时间戳的缓存关键帧
 type cacheEntry struct {
 	payload   []byte
 	timestamp time.Time

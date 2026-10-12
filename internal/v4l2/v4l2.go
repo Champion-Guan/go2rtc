@@ -3,5 +3,5 @@
 package v4l2
 
 func Init() {
-	// not supported
+	// 不支持
 }

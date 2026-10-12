@@ -1,4 +1,4 @@
-// Package h264 - MPEG4 format related functions
+// h264 包：MPEG4 格式相关函数
 package h264
 
 import (
@@ -10,7 +10,7 @@ import (
 	"github.com/AlexxIT/go2rtc/pkg/core"
 )
 
-// DecodeConfig - extract profile, SPS and PPS from MPEG4 config
+// DecodeConfig 从 MPEG4 配置提取配置档、SPS 和 PPS
 func DecodeConfig(conf []byte) (profile []byte, sps []byte, pps []byte) {
 	if len(conf) < 6 || conf[0] != 1 {
 		return

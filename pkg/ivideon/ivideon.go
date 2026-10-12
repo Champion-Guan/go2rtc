@@ -97,7 +97,7 @@ func (p *Producer) Start() error {
 	ch <- p.buf
 
 	go func() {
-		// add delay to the stream for smooth playing (not a best solution)
+		// 为流添加延迟以平滑播放，此方案仍可改进
 		t0 := time.Now()
 
 		for data := range ch {
@@ -105,7 +105,7 @@ func (p *Producer) Start() error {
 			if receiver := receivers[trackID]; receiver != nil {
 				clockRate := time.Duration(receiver.Codec.ClockRate)
 				for _, packet := range packets {
-					// synchronize framerate for WebRTC and MSE
+					// 同步 WebRTC 与 MSE 帧率
 					ts := time.Second * time.Duration(packet.Timestamp) / clockRate
 					d := ts - time.Since(t0)
 					if d < 0 {
@@ -158,7 +158,7 @@ func (p *Producer) probe() (err error) {
 			continue
 
 		case "stream-init":
-			// it's difficult to maintain audio
+			// 音频同步维护较困难
 			if strings.HasPrefix(msg.CodecString, "avc1") {
 				medias := p.dem.Probe(msg.Data)
 				p.Medias = append(p.Medias, medias...)

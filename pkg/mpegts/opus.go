@@ -4,7 +4,7 @@ import (
 	"github.com/AlexxIT/go2rtc/pkg/bits"
 )
 
-// opusDT - each AU from FFmpeg has 5 OPUS packets. Each packet len = 960 in the 48000 clock.
+// opusDT：FFmpeg 的每个音频单元包含 5 个 OPUS 包，每包在 48000 时钟下长 960
 const opusDT = 960 * ClockRate / 48000
 
 // https://opus-codec.org/docs/

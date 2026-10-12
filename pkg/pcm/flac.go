@@ -1,7 +1,7 @@
-// Package pcm - support raw (verbatim) PCM 16 bit in the FLAC container:
+// pcm 包支持 FLAC 容器中的原始 16 位 PCM：
 // - only 1 channel
-// - only 16 bit per sample
-// - only 8000, 16000, 24000, 48000 sample rate
+// - 每个采样仅支持 16 位
+// - 仅支持 8000、16000、24000、48000 采样率
 package pcm
 
 import (
@@ -25,9 +25,9 @@ func FLACHeader(magic bool, sampleRate uint32) []byte {
 	b[4] = 0x80 // [4] lastMetadata=1 (1 bit), blockType=0 - STREAMINFO (7 bit)
 	b[7] = 0x22 // [5..7] blockLength=34 (24 bit)
 
-	// Important for Apple QuickTime player:
-	// 1. Both values should be same
-	// 2. Maximum value = 32768
+	// Apple QuickTime 播放器需要以下设置：
+	// 1. 两个值应相同
+	// 2. 最大值为 32768
 	binary.BigEndian.PutUint16(b[8:], 32768)  // [8..9] info.BlockSizeMin=16 (16 bit)
 	binary.BigEndian.PutUint16(b[10:], 32768) // [10..11] info.BlockSizeMin=65535 (16 bit)
 
@@ -90,7 +90,7 @@ func FLACEncoder(codecName string, clockRate uint32, handler core.HandlerFunc) c
 		// https://xiph.org/flac/format.html#frame_header
 		buf := make([]byte, samples*2+30)
 
-		// 1. Frame header
+		// 1. 帧头
 		buf[0] = 0xFF
 		buf[1] = 0xF9      // [0..1] syncCode=0xFFF8 - reserved (15 bit), blockStrategy=1 - variable-blocksize (1 bit)
 		buf[2] = 0x70 | sr // blockSizeType=7 (4 bit), sampleRate=4 - 8000 (4 bit)
@@ -99,14 +99,14 @@ func FLACEncoder(codecName string, clockRate uint32, handler core.HandlerFunc) c
 		n := 4 + utf8.EncodeRune(buf[4:], sampleNumber) // 4 bytes max
 		sampleNumber += int32(samples)
 
-		// this is wrong but very simple frame block size value
+		// 此帧块大小值并不准确，但实现简单
 		binary.BigEndian.PutUint16(buf[n:], samples-1)
 		n += 2
 
 		buf[n] = crc8.Checksum(buf[:n], table8)
 		n += 1
 
-		// 2. Subframe header
+		// 2. 子帧头
 		buf[n] = 0x02 // padding=0 (1 bit), subframeType=1 - verbatim (6 bit), wastedFlag=0 (1 bit)
 		n += 1
 
@@ -129,7 +129,7 @@ func FLACEncoder(codecName string, clockRate uint32, handler core.HandlerFunc) c
 		case core.CodecPCM:
 			n += copy(buf[n:], packet.Payload)
 		case core.CodecPCML:
-			// reverse endian from little to big
+			// 将字节序从小端转换为大端
 			size := len(packet.Payload)
 			for i := 0; i < size; i += 2 {
 				buf[n] = packet.Payload[i+1]
@@ -138,7 +138,7 @@ func FLACEncoder(codecName string, clockRate uint32, handler core.HandlerFunc) c
 			}
 		}
 
-		// 4. Frame footer
+		// 4. 帧尾
 		crc := crc16.Checksum(buf[:n], table16)
 		binary.BigEndian.PutUint16(buf[n:], crc)
 		n += 2

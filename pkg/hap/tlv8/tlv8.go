@@ -55,8 +55,8 @@ func Marshal(v any) ([]byte, error) {
 	return nil, errors.New("tlv8: not implemented: " + kind.String())
 }
 
-// separator the most confusing meaning in the documentation.
-// It can have a value of 0x00 or 0xFF or even 0x05.
+// 分隔符是文档中含义较混乱的字段，
+// 可能为 0x00、0xFF，甚至 0x05
 const separator = 0xFF
 
 func appendSlice(b []byte, value reflect.Value) ([]byte, error) {
@@ -221,9 +221,9 @@ func Unmarshal(data []byte, v any) error {
 	return errors.New("tlv8: not implemented: " + kind.String())
 }
 
-// unmarshalTLV can return two types of errors:
-// - critical and then the value of []byte will be nil
-// - not critical and then []byte will contain the value
+// unmarshalTLV 可能返回两种错误：
+// - 严重错误时，[]byte 的值为 nil
+// - 非严重错误时，[]byte 包含相应值
 func unmarshalTLV(b []byte, value reflect.Value) ([]byte, error) {
 	if len(b) < 2 {
 		return nil, errors.New("tlv8: wrong size: " + value.Type().Name())
@@ -232,7 +232,7 @@ func unmarshalTLV(b []byte, value reflect.Value) ([]byte, error) {
 	t := b[0]
 	l := int(b[1])
 
-	// array item divider (t == 0x00 || t == 0xFF)
+	// 数组项分隔符，t 为 0x00 或 0xFF
 	if l == 0 {
 		return b[2:], errors.New("tlv8: zero item")
 	}
@@ -247,7 +247,7 @@ func unmarshalTLV(b []byte, value reflect.Value) ([]byte, error) {
 		v = append(v, b[2:2+l]...)
 		b = b[2+l:]
 
-		// if size == 255 and same tag - continue read big payload
+		// 大小为 255 且标签相同时，继续读取大负载
 		if l < 255 || len(b) < 2 || b[0] != t {
 			break
 		}

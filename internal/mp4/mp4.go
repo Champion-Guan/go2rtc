@@ -29,7 +29,7 @@ func Init() {
 var log zerolog.Logger
 
 func handlerKeyframe(w http.ResponseWriter, r *http.Request) {
-	// Chrome 105 does two requests: without Range and with `Range: bytes=0-`
+	// Chrome 105 会发送两次请求：不带 Range，以及带 `Range: bytes=0-`
 	ua := r.UserAgent()
 	if strings.Contains(ua, " Chrome/") {
 		if r.Header.Values("Range") == nil {
@@ -60,7 +60,7 @@ func handlerKeyframe(w http.ResponseWriter, r *http.Request) {
 
 	stream.RemoveConsumer(cons)
 
-	// Apple Safari won't show frame without length
+	// Apple Safari 需要长度信息才能显示帧
 	header := w.Header()
 	header.Set("Content-Length", strconv.Itoa(once.Len()))
 	header.Set("Content-Type", mp4.ContentType(cons.Codecs()))
@@ -81,7 +81,7 @@ func handlerMP4(w http.ResponseWriter, r *http.Request) {
 
 	ua := r.UserAgent()
 	if strings.Contains(ua, " Safari/") && !strings.Contains(ua, " Chrome/") && !query.Has("duration") {
-		// auto redirect to HLS/fMP4 format, because Safari not support MP4 stream
+		// Safari 不支持 MP4 流，自动重定向到 HLS/fMP4
 		url := "stream.m3u8?" + r.URL.RawQuery
 		if !query.Has("mp4") {
 			url += "&mp4"

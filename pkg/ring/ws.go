@@ -180,7 +180,7 @@ func (c *WSClient) startMessageLoop() {
 			if err := c.ws.ReadJSON(&res); err != nil {
 				select {
 				case <-c.closed:
-					// Ignore error if closed
+					// 已关闭时忽略错误
 				default:
 					c.onWsError(err)
 				}

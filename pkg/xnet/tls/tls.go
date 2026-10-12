@@ -13,13 +13,13 @@ import (
 )
 
 func CreateCertificate() (*tls.Certificate, error) {
-	// 1. Generate an RSA private key
+	// 1. 生成 RSA 私钥
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Define the certificate template
+	// 2. 定义证书模板
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
@@ -39,13 +39,13 @@ func CreateCertificate() (*tls.Certificate, error) {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 
-		// Add localhost as a valid IP and DNS name
+		// 将 localhost 添加为有效 IP 和 DNS 名称
 		IPAddresses: []net.IP{[]byte{127, 0, 0, 1}},
 		DNSNames:    []string{"localhost"},
 	}
 
-	// 3. Create a self-signed certificate
-	// The parent is the template itself, and we use the generated public and private keys.
+	// 3. 创建自签名证书
+	// 父模板为自身，使用生成的公私密钥。
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
 		return nil, err

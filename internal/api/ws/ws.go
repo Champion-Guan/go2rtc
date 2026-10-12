@@ -34,7 +34,7 @@ func Init() {
 
 var log zerolog.Logger
 
-// Message - struct for data exchange in Web API
+// Message 是网页接口的数据交换结构
 type Message struct {
 	Type  string `json:"type"`
 	Value any    `json:"value,omitempty"`
@@ -71,7 +71,7 @@ func initWS(origin string) {
 
 	switch origin {
 	case "":
-		// same origin + ignore port
+		// 同源，忽略端口
 		wsUp.CheckOrigin = func(r *http.Request) bool {
 			origin := r.Header["Origin"]
 			if len(origin) == 0 {
@@ -92,7 +92,7 @@ func initWS(origin string) {
 			return false
 		}
 	case "*":
-		// any origin
+		// 允许任意来源
 		wsUp.CheckOrigin = func(r *http.Request) bool {
 			return true
 		}
@@ -199,7 +199,7 @@ func (t *Transport) OnClose(f func()) {
 	t.mx.Unlock()
 }
 
-// WithContext - run function with Context variable
+// WithContext 使用 Context 变量运行函数
 func (t *Transport) WithContext(f func(ctx map[any]any)) {
 	t.mx.Lock()
 	if t.ctx == nil {

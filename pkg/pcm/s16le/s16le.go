@@ -1,7 +1,7 @@
 package s16le
 
 func PeaksRMS(b []byte) int16 {
-	// RMS of sine wave = peak / sqrt2
+	// 正弦波均方根值 = 峰值 / 根号 2
 	// https://en.wikipedia.org/wiki/Root_mean_square
 	// https://www.youtube.com/watch?v=MUDkL4KZi0I
 	var peaks int32

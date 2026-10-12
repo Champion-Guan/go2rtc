@@ -3,5 +3,5 @@
 package alsa
 
 func Init() {
-	// not supported
+	// 不支持
 }

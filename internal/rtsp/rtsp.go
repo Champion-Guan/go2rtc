@@ -26,7 +26,7 @@ func Init() {
 		} `yaml:"rtsp"`
 	}
 
-	// default config
+	// 默认配置
 	conf.Mod.Listen = ":8554"
 	conf.Mod.DefaultQuery = "video&audio"
 
@@ -35,12 +35,12 @@ func Init() {
 
 	log = app.GetLogger("rtsp")
 
-	// RTSP client support
+	// RTSP 客户端支持
 	streams.HandleFunc("rtsp", rtspHandler)
 	streams.HandleFunc("rtsps", rtspHandler)
 	streams.HandleFunc("rtspx", rtspHandler)
 
-	// RTSP server support
+	// RTSP 服务器支持
 	address := conf.Mod.Listen
 	if address == "" {
 		return
@@ -69,7 +69,7 @@ func Init() {
 
 			c := rtsp.NewServer(conn)
 			c.PacketSize = conf.Mod.PacketSize
-			// skip check auth for localhost
+			// 本机请求跳过身份验证
 			if conf.Mod.Username != "" && !conn.RemoteAddr().(*net.TCPAddr).IP.IsLoopback() {
 				c.Auth(conf.Mod.Username, conf.Mod.Password)
 			}
@@ -130,7 +130,7 @@ func rtspHandler(rawURL string) (core.Producer, error) {
 		}
 		log.Trace().Msgf("[rtsp] describe (backchannel=%t) err: %v", conn.Backchannel, err)
 
-		// second try without backchannel, we need to reconnect
+		// 第二次尝试不使用回传通道，需要重新连接
 		conn.Backchannel = false
 		if err = conn.Dial(); err != nil {
 			return nil, err
@@ -208,14 +208,14 @@ func tcpHandler(conn *rtsp.Conn) {
 				conn.PacketSize = uint16(core.Atoi(s))
 			}
 
-			// param name like ffmpeg style https://ffmpeg.org/ffmpeg-protocols.html
+			// 参数命名沿用 FFmpeg：https://ffmpeg.org/ffmpeg-protocols.html
 			if s := query.Get("log_level"); s != "" {
 				if lvl, err := zerolog.ParseLevel(s); err == nil {
 					level = lvl
 				}
 			}
 
-			// will help to protect looping requests to same source
+			// 防止向同一源递归发送请求
 			conn.Connection.Source = query.Get("source")
 
 			if err := stream.AddConsumer(conn); err != nil {

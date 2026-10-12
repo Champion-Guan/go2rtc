@@ -1,4 +1,4 @@
-// Package annexb - universal for H264 and H265
+// annexb 包：通用于 H264 和 H265
 package annexb
 
 import (
@@ -24,7 +24,7 @@ func EncodeToAVCC(annexb []byte) (avc []byte) {
 		var offset int
 
 		if i+3 < len(annexb) {
-			// search next separator
+			// 查找下一个分隔符
 			if annexb[i] == 0 && annexb[i+1] == 0 {
 				if annexb[i+2] == 1 {
 					offset = 3 // 00 00 01
@@ -46,7 +46,7 @@ func EncodeToAVCC(annexb []byte) (avc []byte) {
 			avc = append(avc, annexb[start:i]...)
 		}
 
-		// sometimes FFmpeg put separator at the end
+		// FFmpeg 有时将分隔符放在末尾
 		if i += offset; i == len(annexb) {
 			break
 		}
@@ -82,7 +82,7 @@ func DecodeAVCC(b []byte, safeClone bool) []byte {
 	return b
 }
 
-// DecodeAVCCWithAUD - AUD doesn't important for FFmpeg, but important for Safari
+// DecodeAVCCWithAUD：AUD 对 FFmpeg 不重要，但 Safari 需要
 func DecodeAVCCWithAUD(src []byte) []byte {
 	dst := make([]byte, len(startAUD)+len(src))
 	copy(dst, startAUD)
@@ -101,7 +101,7 @@ const (
 	h265PFrame = 1
 )
 
-// IndexFrame - get new frame start position in the AnnexB stream
+// IndexFrame 获取 Annex-B 流中新帧的起始位置
 func IndexFrame(b []byte) int {
 	if len(b) < len(startAUDstart) {
 		return -1

@@ -35,12 +35,12 @@ var log zerolog.Logger
 
 const keepalive = 5 * time.Second
 
-// once I saw 404 on MP4 segment, so better to use mutex
+// 曾遇到 MP4 分片返回 404，因此最好使用互斥锁
 var sessions = map[string]*Session{}
 var sessionsMu sync.RWMutex
 
 func handlerStream(w http.ResponseWriter, r *http.Request) {
-	// CORS important for Chromecast
+	// 跨域支持对 Chromecast 很重要
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
 
@@ -58,7 +58,7 @@ func handlerStream(w http.ResponseWriter, r *http.Request) {
 
 	var cons core.Consumer
 
-	// use fMP4 with codecs filter and TS without
+	// 使用编码过滤器时提供 fMP4，否则提供 TS
 	medias := mp4.ParseQuery(r.URL.Query())
 	if medias != nil {
 		c := mp4.NewConsumer(medias)

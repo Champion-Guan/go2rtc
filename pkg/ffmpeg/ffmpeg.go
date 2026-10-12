@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// correlation of libavformat versions with ffmpeg versions
+// libavformat 与 FFmpeg 的版本对应关系
 const (
 	Version50 = "59. 16"
 	Version51 = "59. 27"
@@ -62,8 +62,8 @@ func (a *Args) String() string {
 	}
 
 	b.WriteByte(' ')
-	// starting from FFmpeg 6.1 readrate=1 has default initial bust 0.5 sec
-	// it might make us miss the first couple seconds of the file
+	// FFmpeg 6.1 起，readrate=1 默认有 0.5 秒初始突发读取
+	// 可能导致错过文件最初几秒的内容
 	if strings.HasPrefix(a.Input, "-re ") && a.Version >= Version61 {
 		b.WriteString("-readrate_initial_burst 0.001 ")
 	}
@@ -73,7 +73,7 @@ func (a *Args) String() string {
 	var iv, ia int
 
 	for _, codec := range a.Codecs {
-		// support multiple video and/or audio codecs
+		// 支持多种视频和音频编码
 		if multimode && len(codec) >= 5 {
 			switch codec[:5] {
 			case "-c:v ":

@@ -6,9 +6,9 @@
     "vitepress": "^2.0.0-alpha.16"
   },
   "scripts": {
-    "docs:dev": "vitepress dev website --host",
-    "docs:build": "vitepress build website",
-    "docs:preview": "vitepress preview website"
+    "docs:dev": "vitepress dev 网站 --host",
+    "docs:build": "vitepress build 网站",
+    "docs:preview": "vitepress preview 网站"
   },
   "eslintConfig": {
     "env": {

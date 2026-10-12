@@ -19,10 +19,10 @@ func RTPDepay(handlerFunc core.HandlerFunc) core.HandlerFunc {
 		// https://www.rfc-editor.org/rfc/rfc2435#section-3.1
 		b := packet.Payload
 
-		// 3.1.  JPEG header
+		// 3.1. JPEG 头
 		t := b[4]
 
-		// 3.1.7.  Restart Marker header
+		// 3.1.7. 重启标记头
 		if 64 <= t && t <= 127 {
 			b = b[12:] // skip it
 		} else {
@@ -32,7 +32,7 @@ func RTPDepay(handlerFunc core.HandlerFunc) core.HandlerFunc {
 		if len(buf) == 0 {
 			var lqt, cqt []byte
 
-			// 3.1.8.  Quantization Table header
+			// 3.1.8. 量化表头
 			q := packet.Payload[5]
 			if q >= 128 {
 				lqt = b[4:68]
@@ -43,11 +43,11 @@ func RTPDepay(handlerFunc core.HandlerFunc) core.HandlerFunc {
 			}
 
 			// https://www.rfc-editor.org/rfc/rfc2435#section-3.1.5
-			// The maximum width is 2040 pixels.
+			// 最大宽度为 2040 像素。
 			w := uint16(packet.Payload[6]) << 3
 			h := uint16(packet.Payload[7]) << 3
 
-			// fix sizes more than 2040
+			// 修正超过 2040 的尺寸
 			switch {
 			// 512x1920 512x1440
 			case w == cutSize(2560) && (h == 1920 || h == 1440):
@@ -65,7 +65,7 @@ func RTPDepay(handlerFunc core.HandlerFunc) core.HandlerFunc {
 			buf = MakeHeaders(buf, t, w, h, lqt, cqt)
 		}
 
-		// 3.1.9.  JPEG Payload
+		// 3.1.9. JPEG 载荷
 		buf = append(buf, b...)
 
 		if !packet.Marker {
@@ -95,7 +95,7 @@ func RTPPay(handlerFunc core.HandlerFunc) core.HandlerFunc {
 	sequencer := rtp.NewRandomSequencer()
 
 	return func(packet *rtp.Packet) {
-		// reincode image to more common form
+		// 将图像重新编码为更常见的形式
 		p, err := Transcode(packet.Payload)
 		if err != nil {
 			return
@@ -105,7 +105,7 @@ func RTPPay(handlerFunc core.HandlerFunc) core.HandlerFunc {
 		h1[4] = 1   // Type
 		h1[5] = 255 // Q
 
-		// MBZ=0, Precision=0, Length=128
+		// MBZ=0，精度为 0，长度为 128
 		h2 := make([]byte, 4, 132)
 		h2[3] = 128
 
@@ -118,7 +118,7 @@ func RTPPay(handlerFunc core.HandlerFunc) core.HandlerFunc {
 
 			size := binary.BigEndian.Uint16(p[2:]) + 2
 
-			// 2 bytes payload size (include 2 bytes)
+			// 2 字节载荷长度（包括这 2 字节）
 			switch p[1] {
 			case 0xD8: // 0. Start Of Image (size=0)
 				p = p[2:]

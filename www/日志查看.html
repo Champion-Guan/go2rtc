@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志 - go2rtc</title>
+    <style>
+        main > div {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        table tbody {
+            font-size: 13px;
+        }
+
+        .trace {
+            color: #585858 !important;
+        }
+
+        .debug {
+            color: #808080 !important;
+        }
+
+        .info {
+            color: #0174DF !important;
+        }
+
+        .warn {
+            color: #FF9966 !important;
+        }
+
+        .error {
+            color: #DF0101 !important;
+        }
+    </style>
+</head>
+<body>
+
+<script src="公共界面.js"></script>
+
+<main>
+    <div>
+        <button id="clean">清空日志</button>
+        <button id="update">自动刷新：开启</button>
+        <button id="reverse">倒序显示：关闭</button>
+    </div>
+    <table>
+        <thead>
+        <tr>
+            <th style="width: 100px">时间</th>
+            <th style="width: 40px">级别</th>
+            <th>内容</th>
+        </tr>
+        </thead>
+        <tbody id="log">
+        </tbody>
+    </table>
+</main>
+
+<script>
+    document.getElementById('clean').addEventListener('click', async () => {
+        const r = await fetch('api/log', {method: 'DELETE'});
+        if (r.ok) reload();
+        alert(await r.text());
+    });
+
+    // 清理输入文本，防止插入 DOM 时发生 XSS
+    function escapeHTML(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;')
+            .replace(/\n/g, '<br>');
+    }
+
+    const reverseBtn = document.getElementById('reverse');
+    const update = document.getElementById('update');
+
+    let reverseOrder = false;
+    let autoUpdateEnabled = true;
+
+    reverseBtn.textContent = `倒序显示：${reverseOrder ? '开启' : '关闭'}`;
+    update.textContent = `自动刷新：${autoUpdateEnabled ? '开启' : '关闭'}`;
+
+    function applyLogStyling(jsonlines) {
+        const KEYS = ['time', 'level', 'message'];
+        let lines = JSON.parse('[' + jsonlines.trimEnd().replaceAll('\n', ',') + ']');
+        if (reverseOrder) {
+            lines = lines.reverse();
+        }
+        return lines.map(line => {
+            const ts = new Date(line['time']).toLocaleString('zh-CN', {
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                fractionalSecondDigits: 3
+            });
+            const msg = Object.keys(line).reduce((msg, key) => {
+                return KEYS.indexOf(key) < 0 ? `${msg} ${key}=${line[key]}` : msg;
+            }, line['message']);
+            return `<tr class="${line['level']}"><td>${ts}</td><td>${line['level']}</td><td>${escapeHTML(msg)}</td></tr>`;
+        }).join('');
+    }
+
+    function reload() {
+        const url = new URL('api/log', location.href);
+        fetch(url, {cache: 'no-cache'})
+            .then(response => response.text())
+            .then(data => {
+                // 为日志数据应用样式
+                document.getElementById('log').innerHTML = applyLogStyling(data);
+            })
+            .catch(error => {
+                console.error('发生错误：', error);
+            });
+    }
+
+    reload();
+
+    update.textContent = `自动刷新：${autoUpdateEnabled ? '开启' : '关闭'}`;
+    update.addEventListener('click', () => {
+        autoUpdateEnabled = !autoUpdateEnabled;
+        update.textContent = `自动刷新：${autoUpdateEnabled ? '开启' : '关闭'}`;
+    });
+
+    // 切换日志顺序
+    reverseBtn.textContent = `倒序显示：${reverseOrder ? '开启' : '关闭'}`;
+    reverseBtn.addEventListener('click', () => {
+        reverseOrder = !reverseOrder;
+        reverseBtn.textContent = `倒序显示：${reverseOrder ? '开启' : '关闭'}`;
+        reload(); // Reload logs to apply the new order
+    });
+
+    // 每 5 秒刷新日志
+    setInterval(() => {
+        if (autoUpdateEnabled) reload();
+    }, 5000);
+</script>
+
+</body>
+</html>

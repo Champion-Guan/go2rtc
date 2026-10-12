@@ -238,19 +238,19 @@ func TestParseArgsHwVaapi(t *testing.T) {
 }
 
 func _TestParseArgsHwV4l2m2m(t *testing.T) {
-	// [HTTP-MJPEG] video will be transcoded to H264
+	// [HTTP-MJPEG] 视频将转码为 H264
 	args := parseArgs("http:///example.com#video=h264#hardware=v4l2m2m")
 	require.Equal(t, `ffmpeg -hide_banner -fflags nobuffer -flags low_delay -i http:///example.com -c:v h264_v4l2m2m -g 50 -bf 0 -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [RTSP] video with rotation, should be transcoded, so select H264
+	// [RTSP] 旋转视频需要转码，因此选择 H264
 	args = parseArgs("rtsp://example.com#video=h264#rotate=180#hardware=v4l2m2m")
 	require.Equal(t, `ffmpeg -hide_banner -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v h264_v4l2m2m -g 50 -bf 0 -an -vf "transpose=1,transpose=1" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [RTSP] video with resize to 1280x720, should be transcoded, so select H265
+	// [RTSP] 视频缩放到 1280x720，需要转码，因此选择 H265
 	args = parseArgs("rtsp://example.com#video=h265#width=1280#height=720#hardware=v4l2m2m")
 	require.Equal(t, `ffmpeg -hide_banner -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v hevc_v4l2m2m -g 50 -bf 0 -an -vf "scale=1280:720" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [DEVICE] MJPEG video with size 1920x1080 will be transcoded to H265
+	// [DEVICE] 1920x1080 的 MJPEG 视频将转码为 H265
 	args = parseArgs("device?video=0&video_size=1920x1080#video=h265#hardware=v4l2m2m")
 	require.Equal(t, `ffmpeg -hide_banner -f dshow -video_size 1920x1080 -i video="0" -c:v hevc_v4l2m2m -g 50 -bf 0 -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 }
@@ -286,59 +286,59 @@ func TestParseArgsHwRKMPP(t *testing.T) {
 }
 
 func _TestParseArgsHwCuda(t *testing.T) {
-	// [HTTP-MJPEG] video will be transcoded to H264
+	// [HTTP-MJPEG] 视频将转码为 H264
 	args := parseArgs("http:///example.com#video=h264#hardware=cuda")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel cuda -hwaccel_output_format cuda -fflags nobuffer -flags low_delay -i http:///example.com -c:v h264_nvenc -g 50 -bf 0 -profile:v high -level:v auto -preset:v p2 -tune:v ll -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [RTSP] video with rotation, should be transcoded, so select H264
+	// [RTSP] 旋转视频需要转码，因此选择 H264
 	args = parseArgs("rtsp://example.com#video=h264#rotate=180#hardware=cuda")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel cuda -hwaccel_output_format nv12 -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v h264_nvenc -g 50 -bf 0 -profile:v high -level:v auto -preset:v p2 -tune:v ll -an -vf "transpose=1,transpose=1,hwupload" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [RTSP] video with resize to 1280x720, should be transcoded, so select H265
+	// [RTSP] 视频缩放到 1280x720，需要转码，因此选择 H265
 	args = parseArgs("rtsp://example.com#video=h265#width=1280#height=720#hardware=cuda")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel cuda -hwaccel_output_format cuda -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v hevc_nvenc -g 50 -bf 0 -profile:v high -level:v auto -an -vf "scale_cuda=1280:720" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [DEVICE] MJPEG video with size 1920x1080 will be transcoded to H265
+	// [DEVICE] 1920x1080 的 MJPEG 视频将转码为 H265
 	args = parseArgs("device?video=0&video_size=1920x1080#video=h265#hardware=cuda")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel cuda -hwaccel_output_format cuda -f dshow -video_size 1920x1080 -i video="0" -c:v hevc_nvenc -g 50 -bf 0 -profile:v high -level:v auto -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 }
 
 func _TestParseArgsHwDxva2(t *testing.T) {
-	// [HTTP-MJPEG] video will be transcoded to H264
+	// [HTTP-MJPEG] 视频将转码为 H264
 	args := parseArgs("http:///example.com#video=h264#hardware=dxva2")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel dxva2 -hwaccel_output_format dxva2_vld -fflags nobuffer -flags low_delay -i http:///example.com -c:v h264_qsv -g 50 -bf 0 -profile:v high -level:v 4.1 -async_depth:v 1 -an -vf "hwmap=derive_device=qsv,format=qsv" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [RTSP] video with rotation, should be transcoded, so select H264
+	// [RTSP] 旋转视频需要转码，因此选择 H264
 	args = parseArgs("rtsp://example.com#video=h264#rotate=180#hardware=dxva2")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel dxva2 -hwaccel_output_format dxva2_vld -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v h264_qsv -g 50 -bf 0 -profile:v high -level:v 4.1 -async_depth:v 1 -an -vf "hwmap=derive_device=qsv,format=qsv,transpose=1,transpose=1" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [RTSP] video with resize to 1280x720, should be transcoded, so select H265
+	// [RTSP] 视频缩放到 1280x720，需要转码，因此选择 H265
 	args = parseArgs("rtsp://example.com#video=h265#width=1280#height=720#hardware=dxva2")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel dxva2 -hwaccel_output_format dxva2_vld -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v hevc_qsv -g 50 -bf 0 -profile:v high -level:v 5.1 -async_depth:v 1 -an -vf "hwmap=derive_device=qsv,format=qsv,scale_qsv=1280:720" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [FILE] video will be output for MJPEG to pipe, audio will be skipped
+	// [FILE] MJPEG 视频输出到管道，跳过音频
 	args = parseArgs("/media/bbb.mp4#video=mjpeg#hardware=dxva2")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel dxva2 -hwaccel_output_format dxva2_vld -re -i /media/bbb.mp4 -c:v mjpeg_qsv -profile:v high -level:v 5.1 -an -vf "hwmap=derive_device=qsv,format=qsv" -f mjpeg -`, args.String())
 
-	// [DEVICE] MJPEG video with size 1920x1080 will be transcoded to H265
+	// [DEVICE] 1920x1080 的 MJPEG 视频将转码为 H265
 	args = parseArgs("device?video=0&video_size=1920x1080#video=h265#hardware=dxva2")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel dxva2 -hwaccel_output_format dxva2_vld -f dshow -video_size 1920x1080 -i video="0" -c:v hevc_qsv -g 50 -bf 0 -profile:v high -level:v 5.1 -async_depth:v 1 -an -vf "hwmap=derive_device=qsv,format=qsv" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 }
 
 func _TestParseArgsHwVideotoolbox(t *testing.T) {
-	// [HTTP-MJPEG] video will be transcoded to H264
+	// [HTTP-MJPEG] 视频将转码为 H264
 	args := parseArgs("http:///example.com#video=h264#hardware=videotoolbox")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel videotoolbox -hwaccel_output_format videotoolbox_vld -fflags nobuffer -flags low_delay -i http:///example.com -c:v h264_videotoolbox -g 50 -bf 0 -profile:v high -level:v 4.1 -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [RTSP] video with rotation, should be transcoded, so select H264
+	// [RTSP] 旋转视频需要转码，因此选择 H264
 	args = parseArgs("rtsp://example.com#video=h264#rotate=180#hardware=videotoolbox")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel videotoolbox -hwaccel_output_format videotoolbox_vld -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v h264_videotoolbox -g 50 -bf 0 -profile:v high -level:v 4.1 -an -vf "transpose=1,transpose=1" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [RTSP] video with resize to 1280x720, should be transcoded, so select H265
+	// [RTSP] 视频缩放到 1280x720，需要转码，因此选择 H265
 	args = parseArgs("rtsp://example.com#video=h265#width=1280#height=720#hardware=videotoolbox")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel videotoolbox -hwaccel_output_format videotoolbox_vld -allowed_media_types video -fflags nobuffer -flags low_delay -timeout 5000000 -user_agent go2rtc/ffmpeg -rtsp_flags prefer_tcp -i rtsp://example.com -c:v hevc_videotoolbox -g 50 -bf 0 -profile:v high -level:v 5.1 -an -vf "scale=1280:720" -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 
-	// [DEVICE] MJPEG video with size 1920x1080 will be transcoded to H265
+	// [DEVICE] 1920x1080 的 MJPEG 视频将转码为 H265
 	args = parseArgs("device?video=0&video_size=1920x1080#video=h265#hardware=videotoolbox")
 	require.Equal(t, `ffmpeg -hide_banner -hwaccel videotoolbox -hwaccel_output_format videotoolbox_vld -f dshow -video_size 1920x1080 -i video="0" -c:v hevc_videotoolbox -g 50 -bf 0 -profile:v high -level:v 5.1 -an -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`, args.String())
 }

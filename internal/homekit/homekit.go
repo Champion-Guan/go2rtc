@@ -100,10 +100,10 @@ func Init() {
 		srv.UpdateStatus()
 
 		if url := findHomeKitURL(stream.Sources()); url != "" {
-			// 1. Act as transparent proxy for HomeKit camera
+			// 1. 作为 HomeKit 摄像头的透明代理
 			srv.proxyURL = url
 		} else {
-			// 2. Act as basic HomeKit camera
+			// 2. 作为基础 HomeKit 摄像头
 			srv.accessory = camera.NewAccessory("AlexxIT", "go2rtc", name, "-", app.Version)
 		}
 
@@ -158,9 +158,9 @@ func resolve(host string) *server {
 }
 
 func hapHandler(w http.ResponseWriter, r *http.Request) {
-	// Can support multiple HomeKit cameras on single port ONLY for Apple devices.
-	// Doesn't support Home Assistant and any other open source projects
-	// because they don't send the host header in requests.
+	// 仅 Apple 设备支持在单个端口连接多个 HomeKit 摄像头。
+	// 不支持 Home Assistant 或其他开源项目，
+	// 因为它们不在请求中发送 Host 响应头。
 	srv := resolve(r.Host)
 	if srv == nil {
 		log.Error().Msg("[homekit] unknown host: " + r.Host)

@@ -125,11 +125,11 @@ func apiAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Try to login
+	// 尝试登录
 	cloud := wyze.NewCloud(apiKey, apiID)
 
 	if err := cloud.Login(email, password); err != nil {
-		// Check for MFA error
+		// 检查多重验证错误
 		var authErr *wyze.AuthError
 		if ok := isAuthError(err, &authErr); ok {
 			w.Header().Set("Content-Type", api.MimeJSON)

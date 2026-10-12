@@ -51,7 +51,7 @@ func Header(codec *core.Codec) []byte {
 }
 
 func ReadHeader(r io.Reader) (*core.Codec, error) {
-	// skip Master RIFF chunk
+	// 跳过主 RIFF 数据块
 	if _, err := io.ReadFull(r, make([]byte, 12)); err != nil {
 		return nil, err
 	}

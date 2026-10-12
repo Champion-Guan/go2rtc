@@ -15,9 +15,9 @@ import (
 	pion "github.com/pion/webrtc/v4"
 )
 
-// This package handles the Milestone WebRTC session lifecycle, including authentication,
-// session creation, and session update with an SDP answer. It is designed to be used with
-// a specific URL format that encodes session parameters. For example:
+// 此包管理 Milestone WebRTC 会话生命周期，包括身份验证、
+// 会话创建，以及携带 SDP 应答的会话更新。使用特定地址格式
+// 编码会话参数，例如：
 // webrtc:https://milestone-host/api#format=milestone#username=User#password=TestPassword#cameraId=a539f254-af05-4d67-a1bb-cd9b3c74d122
 //
 // https://github.com/milestonesys/mipsdk-samples-protocol/tree/main/WebRTC_JavaScript
@@ -43,7 +43,7 @@ func (m *milestoneAPI) GetToken() error {
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	// support httpx protocol
+	// 支持 httpx 协议
 	res, err := tcp.Do(req)
 	if err != nil {
 		return err
