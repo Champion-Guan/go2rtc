@@ -31,7 +31,7 @@ func Init() {
 func handleHTTP(rawURL string) (core.Producer, error) {
 	rawURL, rawQuery, _ := strings.Cut(rawURL, "#")
 
-	// first we get the Content-Type to define supported producer
+	// 先获取 Content-Type，以确定受支持的生产者
 	req, err := http.NewRequest("GET", rawURL, nil)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func do(req *http.Request) (core.Producer, error) {
 		return nil, errors.New(res.Status)
 	}
 
-	// 1. Guess format from content type
+	// 1. 根据内容类型判断格式
 	ct := res.Header.Get("Content-Type")
 	if i := strings.IndexByte(ct, ';'); i > 0 {
 		ct = ct[:i]

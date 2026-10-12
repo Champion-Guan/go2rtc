@@ -8,12 +8,12 @@ import (
 
 var ErrInvalidParams = errors.New("chacha20poly1305: invalid params")
 
-// Decrypt - decrypt without verify
+// Decrypt 解密但不验证
 func Decrypt(key32 []byte, nonce8 string, ciphertext []byte) ([]byte, error) {
 	return DecryptAndVerify(key32, nil, []byte(nonce8), ciphertext, nil)
 }
 
-// Encrypt - encrypt without seal
+// Encrypt 加密但不附加认证标签
 func Encrypt(key32 []byte, nonce8 string, plaintext []byte) ([]byte, error) {
 	return EncryptAndSeal(key32, nil, []byte(nonce8), plaintext, nil)
 }

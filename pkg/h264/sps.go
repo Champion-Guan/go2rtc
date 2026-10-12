@@ -274,8 +274,8 @@ func (s *SPS) String() string {
 	)
 }
 
-// FixPixFmt - change yuvj420p to yuv420p in SPS
-// same as "-c:v copy -bsf:v h264_metadata=video_full_range_flag=0"
+// FixPixFmt 将 SPS 中的 yuvj420p 改为 yuv420p
+// 等同于 -c:v copy -bsf:v h264_metadata=video_full_range_flag=0
 func FixPixFmt(sps []byte) {
 	r := bits.NewReader(sps)
 

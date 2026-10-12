@@ -29,22 +29,22 @@ func RTPDepay(codec *core.Codec, handler core.HandlerFunc) core.HandlerFunc {
 			return
 		}
 
-		// Memory overflow protection. Can happen if we miss a lot of packets with the marker.
+		// 内存溢出保护，丢失大量带结束标记的包时可能发生
 		// https://github.com/AlexxIT/go2rtc/issues/675
 		if len(buf) > 5*1024*1024 {
 			buf = buf[: 0 : 512*1024]
 		}
 
-		// Fix TP-Link Tapo TC70: sends SPS and PPS with packet.Marker = true
-		// Reolink Duo 2: sends SPS with Marker and PPS without
+		// 修正 TP-Link Tapo TC70：发送 SPS 和 PPS 时 packet.Marker 为 true
+		// Reolink Duo 2 的 SPS 带结束标记，PPS 不带
 		if packet.Marker && len(payload) < PSMaxSize {
 			switch NALUType(payload) {
 			case NALUTypeSPS, NALUTypePPS:
 				buf = append(buf, payload...)
 				return
 			case NALUTypeSEI:
-				// RtspServer https://github.com/AlexxIT/go2rtc/issues/244
-				// sends, marked SPS, marked PPS, marked SEI, marked IFrame
+				// RTSP 服务器：https://github.com/AlexxIT/go2rtc/issues/244
+				// 依次发送带结束标记的 SPS、PPS、SEI 和关键帧
 				return
 			}
 		}
@@ -55,13 +55,13 @@ func RTPDepay(codec *core.Codec, handler core.HandlerFunc) core.HandlerFunc {
 				// Amcrest IP4M-1051: 9, 6, 1
 				switch NALUType(payload) {
 				case NALUTypeIFrame:
-					// fix IFrame without SPS,PPS
+					// 修正缺少 SPS/PPS 的关键帧
 					buf = append(buf, ps...)
 				case NALUTypeSEI, NALUTypeAUD:
-					// fix ffmpeg with transcoding first frame
+					// 修正 FFmpeg 转码首帧
 					i := int(4 + binary.BigEndian.Uint32(payload))
 
-					// check if only one NAL (fix ffmpeg transcoding for Reolink RLC-510A)
+					// 检查是否仅有一个 NAL，修正 Reolink RLC-510A 的 FFmpeg 转码
 					if i == len(payload) {
 						return
 					}
@@ -76,7 +76,7 @@ func RTPDepay(codec *core.Codec, handler core.HandlerFunc) core.HandlerFunc {
 			}
 		}
 
-		// collect all NALs for Access Unit
+		// 收集访问单元的全部 NAL
 		if !packet.Marker {
 			buf = append(buf, payload...)
 			return
@@ -87,9 +87,9 @@ func RTPDepay(codec *core.Codec, handler core.HandlerFunc) core.HandlerFunc {
 			buf = buf[:0]
 		}
 
-		// should not be that huge SPS
+		// SPS 不应过大
 		if NALUType(payload) == NALUTypeSPS && binary.BigEndian.Uint32(payload) >= PSMaxSize {
-			// some Chinese buggy cameras have a single packet with SPS+PPS+IFrame separated by 00 00 00 01
+			// 部分异常摄像头将 SPS、PPS 和关键帧放在单包中，用 00 00 00 01 分隔
 			// https://github.com/AlexxIT/WebRTC/issues/391
 			// https://github.com/AlexxIT/WebRTC/issues/392
 			payload = annexb.FixAnnexBInAVCC(payload)

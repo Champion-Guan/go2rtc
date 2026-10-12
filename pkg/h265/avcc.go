@@ -1,4 +1,4 @@
-// Package h265 - AVCC format related functions
+// h265 包：AVCC 格式相关函数
 package h265
 
 import (

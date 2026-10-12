@@ -48,7 +48,7 @@ func Init() {
 				if err := stream.AddConsumer(cons); err != nil {
 					return err
 				}
-				// not best solution
+				// 此方案仍有改进空间
 				if i, ok := cons.(interface{ OnClose(func()) }); ok {
 					i.OnClose(func() {
 						stream.RemoveConsumer(cons)

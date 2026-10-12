@@ -124,7 +124,7 @@ func NewImage(fmtp string) func(frame []byte) image.Image {
 	return nil
 }
 
-// HasSameColor checks if all pixels has same color
+// HasSameColor 检查全部像素是否同色
 func HasSameColor(img image.Image) bool {
 	var pix []byte
 

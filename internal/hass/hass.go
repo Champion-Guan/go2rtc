@@ -33,7 +33,7 @@ func Init() {
 
 	log = app.GetLogger("hass")
 
-	// support API for https://www.home-assistant.io/integrations/rtsp_to_webrtc/
+	// 支持接口：https://www.home-assistant.io/integrations/rtsp_to_webrtc/
 	api.HandleFunc("/static", apiOK)
 	api.HandleFunc("/streams", apiOK)
 	api.HandleFunc("/stream/", apiStream)
@@ -52,11 +52,11 @@ func Init() {
 	})
 
 	streams.HandleFunc("hass", func(source string) (core.Producer, error) {
-		// support hass://supervisor?entity_id=camera.driveway_doorbell
+		// 支持 hass://supervisor?entity_id=camera.driveway_doorbell
 		return hass.NewClient(source)
 	})
 
-	// load static entries from Hass config
+	// 从 Home Assistant 配置加载静态条目
 	if err := importConfig(conf.Mod.Config); err != nil {
 		log.Trace().Msgf("[hass] can't import config: %s", err)
 
@@ -68,7 +68,7 @@ func Init() {
 
 	api.HandleFunc("api/hass", func(w http.ResponseWriter, _ *http.Request) {
 		once.Do(func() {
-			// load WebRTC entities from Hass API, works only for add-on version
+			// 从 Home Assistant 接口加载 WebRTC 实体，仅适用于附加组件版本
 			if token := hass.SupervisorToken(); token != "" {
 				if err := importWebRTC(token); err != nil {
 					log.Warn().Err(err).Caller().Send()
@@ -85,7 +85,7 @@ func Init() {
 		api.ResponseSources(w, items)
 	})
 
-	// for Addon listen on hassio interface, so WebUI feature will work
+	// 附加组件监听 hassio 接口，使网页功能正常工作
 	if conf.API.Listen == "127.0.0.1:1984" {
 		if addr := HassioAddr(); addr != "" {
 			addr += ":1984"
@@ -100,7 +100,7 @@ func Init() {
 }
 
 func importConfig(config string) error {
-	// support load cameras from Hass config file
+	// 支持从 Home Assistant 配置文件加载摄像头
 	filename := path.Join(config, ".storage/core.config_entries")
 	b, err := os.ReadFile(filename)
 	if err != nil {

@@ -12,17 +12,17 @@ func Init() {
 		} `yaml:"srtp"`
 	}
 
-	// default config
+	// 默认配置
 	cfg.Mod.Listen = ":8443"
 
-	// load config from YAML
+	// 从 YAML 加载配置
 	app.LoadConfig(&cfg)
 
 	if cfg.Mod.Listen == "" {
 		return
 	}
 
-	// create SRTP server (endpoint) for receiving video from HomeKit cameras
+	// 创建 SRTP 端点，接收 HomeKit 摄像头视频
 	Server = srtp.NewServer(cfg.Mod.Listen)
 }
 

@@ -38,13 +38,13 @@ func kinesisClient(
 	rawURL string, query url.Values, format string,
 	sdpOffer func(prod *webrtc.Conn, query url.Values) (any, error),
 ) (core.Producer, error) {
-	// 1. Connect to signalign server
+	// 1. 连接信令服务器
 	conn, _, err := websocket.DefaultDialer.Dial(rawURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Load ICEServers from query param (base64 json)
+	// 2. 从查询参数加载 ICEServers（Base64 编码的 JSON）
 	conf := pion.Configuration{}
 
 	if s := query.Get("ice_servers"); s != "" {
@@ -54,10 +54,10 @@ func kinesisClient(
 		}
 	}
 
-	// close websocket when we ready return Producer or connection error
+	// 准备返回生产者或连接错误时关闭 WebSocket
 	defer conn.Close()
 
-	// 3. Create Peer Connection
+	// 3. 创建对等连接
 	api, err := webrtc.NewAPI()
 	if err != nil {
 		return nil, err
@@ -68,13 +68,13 @@ func kinesisClient(
 		return nil, err
 	}
 
-	// protect from sending ICE candidate before Offer
+	// 防止在连接提议前发送 ICE 候选地址
 	var sendOffer core.Waiter
 
-	// protect from blocking on errors
+	// 防止错误导致阻塞
 	defer sendOffer.Done(nil)
 
-	// waiter will wait PC error or WS error or nil (connection OK)
+	// 等待 PeerConnection 错误、WebSocket 错误，或表示连接成功的空值
 	var connState core.Waiter
 
 	req := kinesisRequest{
@@ -119,13 +119,13 @@ func kinesisClient(
 			{Kind: core.KindAudio, Direction: core.DirectionRecvonly},
 		}
 
-		// 4. Create offer
+		// 4. 创建提议
 		var offer string
 		if offer, err = prod.CreateOffer(medias); err != nil {
 			return nil, err
 		}
 
-		// 5. Send offer
+		// 5. 发送提议
 		payload = pion.SessionDescription{
 			Type: pion.SDPTypeOffer,
 			SDP:  offer,
@@ -149,11 +149,11 @@ func kinesisClient(
 	go func() {
 		var err error
 
-		// will be closed when conn will be closed
+		// 底层连接关闭时同步关闭
 		for {
 			var res kinesisResponse
 			if err = conn.ReadJSON(&res); err != nil {
-				// some buggy messages from Amazon servers
+				// 处理 Amazon 服务器中的异常消息
 				if errors.Is(err, io.ErrUnexpectedEOF) {
 					continue
 				}
@@ -164,7 +164,7 @@ func kinesisClient(
 
 			switch res.Type {
 			case "SDP_ANSWER":
-				// 6. Get answer
+				// 6. 获取应答
 				var sd pion.SessionDescription
 				if err = json.Unmarshal(res.Payload, &sd); err != nil {
 					break
@@ -175,7 +175,7 @@ func kinesisClient(
 				}
 
 			case "ICE_CANDIDATE":
-				// 7. Continue to receiving candidates
+				// 7. 继续接收候选地址
 				var ci pion.ICECandidateInit
 				if err = json.Unmarshal(res.Payload, &ci); err != nil {
 					break

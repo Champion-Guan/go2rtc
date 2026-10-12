@@ -24,9 +24,9 @@ func apiRing(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	var ringAPI *ring.RingApi
 
-	// Check auth method
+	// 检查身份验证方式
 	if email := query.Get("email"); email != "" {
-		// Email/Password Flow
+		// 邮箱和密码登录流程
 		password := query.Get("password")
 		code := query.Get("code")
 
@@ -41,10 +41,10 @@ func apiRing(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Try authentication (this will trigger 2FA if needed)
+		// 尝试验证身份，需要时触发双重验证
 		if _, err = ringAPI.GetAuth(code); err != nil {
 			if ringAPI.Using2FA {
-				// Return 2FA prompt
+				// 返回双重验证提示
 				api.ResponseJSON(w, map[string]interface{}{
 					"needs_2fa": true,
 					"prompt":    ringAPI.PromptFor2FA,
@@ -55,7 +55,7 @@ func apiRing(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if refreshToken := query.Get("refresh_token"); refreshToken != "" {
-		// Refresh Token Flow
+		// 刷新令牌流程
 		if refreshToken == "" {
 			http.Error(w, "either email/password or refresh_token is required", http.StatusBadRequest)
 			return
@@ -89,13 +89,13 @@ func apiRing(w http.ResponseWriter, r *http.Request) {
 		cleanQuery.Set("camera_id", fmt.Sprint(camera.ID))
 		cleanQuery.Set("device_id", camera.DeviceID)
 
-		// Stream source
+		// 流输入源
 		items = append(items, &api.Source{
 			Name: camera.Description,
 			URL:  "ring:?" + cleanQuery.Encode(),
 		})
 
-		// Snapshot source
+		// 快照输入源
 		items = append(items, &api.Source{
 			Name: camera.Description + " Snapshot",
 			URL:  "ring:?" + cleanQuery.Encode() + "&snapshot",

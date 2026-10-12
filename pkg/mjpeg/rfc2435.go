@@ -1,8 +1,8 @@
 package mjpeg
 
-// RFC 2435. Appendix A
+// RFC 2435 附录 A
 
-// don't know why two tables are not respect RFC
+// 尚不清楚两张表为何不遵循 RFC
 // https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/rtpdec_jpeg.c
 
 var jpeg_luma_quantizer = [64]byte{
@@ -51,7 +51,7 @@ func MakeTables(q byte) (lqt, cqt []byte) {
 		lq := (int(jpeg_luma_quantizer[i])*factor + 50) / 100
 		cq := (int(jpeg_chroma_quantizer[i])*factor + 50) / 100
 
-		/* Limit the quantizers to 1 <= q <= 255 */
+		/* 将量化器限制在 1 <= q <= 255 */
 		switch {
 		case lq < 1:
 			lqt[i] = 1
@@ -74,7 +74,7 @@ func MakeTables(q byte) (lqt, cqt []byte) {
 	return
 }
 
-// RFC 2435. Appendix B
+// RFC 2435 附录 B
 
 var lum_dc_codelens = []byte{
 	0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
@@ -142,7 +142,7 @@ var chm_ac_symbols = []byte{
 }
 
 func MakeHeaders(p []byte, t byte, w, h uint16, lqt, cqt []byte) []byte {
-	// Appendix A from https://www.rfc-editor.org/rfc/rfc2435
+	// 附录 A：https://www.rfc-editor.org/rfc/rfc2435
 	p = append(p, 0xFF, markerSOI)
 
 	p = MakeQuantHeader(p, lqt, 0)

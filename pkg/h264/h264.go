@@ -23,7 +23,7 @@ func NALUType(b []byte) byte {
 	return b[4] & 0x1F
 }
 
-// IsKeyframe - check if any NALU in one AU is Keyframe
+// IsKeyframe 检查访问单元中是否有关键帧 NALU
 func IsKeyframe(b []byte) bool {
 	for {
 		switch NALUType(b) {
@@ -59,18 +59,18 @@ const (
 	CapabilityMain     = 0x40
 )
 
-// GetProfileLevelID - get profile from fmtp line
-// Some devices won't play video with high level, so limit max profile and max level.
-// And return some profile even if fmtp line is empty.
+// GetProfileLevelID 从 fmtp 行获取配置档
+// 部分设备无法播放高级别视频，因此限制最大配置档和级别，
+// 即使 fmtp 为空，也返回一个配置档
 func GetProfileLevelID(fmtp string) string {
-	// avc1.640029 - H.264 high 4.1 (Chromecast 1st and 2nd Gen)
+	// avc1.640029 表示 H.264 High 4.1，适用于第一、二代 Chromecast
 	profile := byte(ProfileHigh)
 	capab := byte(0)
 	level := byte(41)
 
 	if fmtp != "" {
 		var conf []byte
-		// some cameras has wrong profile-level-id
+		// 部分摄像头提供错误的 profile-level-id
 		// https://github.com/AlexxIT/go2rtc/issues/155
 		if s := core.Between(fmtp, "sprop-parameter-sets=", ","); s != "" {
 			if sps, _ := base64.StdEncoding.DecodeString(s); len(sps) >= 4 {
@@ -81,7 +81,7 @@ func GetProfileLevelID(fmtp string) string {
 		}
 
 		if len(conf) == 3 {
-			// sanitize profile, capab and level to supported values
+			// 将配置档、能力和级别限制为受支持值
 			switch conf[0] {
 			case ProfileBaseline, ProfileMain:
 				profile = conf[0]
@@ -121,7 +121,7 @@ func GetParameterSet(fmtp string) (sps, pps []byte) {
 	return
 }
 
-// GetFmtpLine from SPS+PPS+IFrame in AVC format
+// GetFmtpLine 从 AVC 格式的 SPS、PPS 和关键帧获取 fmtp 行
 func GetFmtpLine(avc []byte) string {
 	s := "packetization-mode=1"
 

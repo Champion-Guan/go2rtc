@@ -7,9 +7,9 @@ import (
 )
 
 func TestTimeToRTP(t *testing.T) {
-	// Reolink camera has 20 FPS
-	// Video timestamp increases by 50ms, SampleRate 90000, RTP timestamp increases by 4500
-	// Audio timestamp increases by 64ms, SampleRate 16000, RTP timestamp increases by 1024
+	// Reolink 摄像头帧率为 20
+	// 视频时间戳每次增加 50 ms，采样率为 90000，RTP 时间戳增加 4500
+	// 音频时间戳每次增加 64 ms，采样率为 16000，RTP 时间戳增加 1024
 	frameN := 1
 	for i := 0; i < 32; i++ {
 		// 1000ms/(90000/4500) = 50ms

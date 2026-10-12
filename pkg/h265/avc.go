@@ -5,24 +5,24 @@ import "github.com/AlexxIT/go2rtc/pkg/h264"
 const forbiddenZeroBit = 0x80
 const nalUnitType = 0x3F
 
-// Deprecated: DecodeStream - find and return first AU in AVC format
-// useful for processing live streams with unknown separator size
+// Deprecated: DecodeStream 查找并返回 AVC 格式的第一个访问单元
+// 用于处理分隔符大小未知的实时流
 func DecodeStream(annexb []byte) ([]byte, int) {
 	startPos := -1
 
 	i := 0
 	for {
-		// search next separator
+		// 查找下一个分隔符
 		if i = h264.IndexFrom(annexb, []byte{0, 0, 1}, i); i < 0 {
 			break
 		}
 
-		// move i to next AU
+		// 将 i 移到下一个访问单元
 		if i += 3; i >= len(annexb) {
 			break
 		}
 
-		// check if AU type valid
+		// 检查访问单元类型是否有效
 		octet := annexb[i]
 		if octet&forbiddenZeroBit != 0 {
 			continue

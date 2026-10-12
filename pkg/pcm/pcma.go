@@ -1,4 +1,4 @@
-// Package pcm
+// pcm 软件包
 // https://www.codeproject.com/Articles/14237/Using-the-G711-standard
 package pcm
 

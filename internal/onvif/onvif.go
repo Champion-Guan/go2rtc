@@ -24,10 +24,10 @@ func Init() {
 
 	streams.HandleFunc("onvif", streamOnvif)
 
-	// ONVIF server on all suburls
+	// 所有子路径都支持 ONVIF 服务器
 	api.HandleFunc("/onvif/", onvifDeviceService)
 
-	// ONVIF client autodiscovery
+	// ONVIF 客户端自动发现
 	api.HandleFunc("api/onvif", apiOnvif)
 }
 
@@ -44,7 +44,7 @@ func streamOnvif(rawURL string) (core.Producer, error) {
 		return nil, err
 	}
 
-	// Append hash-based arguments to the retrieved URI
+	// 将基于哈希的参数附加到获取的地址
 	if i := strings.IndexByte(rawURL, '#'); i > 0 {
 		uri += rawURL[i:]
 	}
@@ -94,14 +94,14 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 		b = onvif.StaticResponse(operation)
 
 	case onvif.DeviceGetCapabilities:
-		// important for Hass: Media section
+		// Home Assistant 需要 Media 部分
 		b = onvif.GetCapabilitiesResponse(r.Host)
 
 	case onvif.DeviceGetServices:
 		b = onvif.GetServicesResponse(r.Host)
 
 	case onvif.DeviceGetDeviceInformation:
-		// important for Hass: SerialNumber (unique server ID)
+		// Home Assistant 需要 SerialNumber，即唯一服务器标识
 		b = onvif.GetDeviceInformationResponse("", "go2rtc", app.Version, r.Host)
 
 	case onvif.DeviceSystemReboot:
@@ -115,7 +115,7 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 		b = onvif.GetVideoSourcesResponse(streams.GetAllNames())
 
 	case onvif.MediaGetProfiles:
-		// important for Hass: H264 codec, width, height
+		// Home Assistant 需要 H264 编码、宽度和高度
 		b = onvif.GetProfilesResponse(streams.GetAllNames())
 
 	case onvif.MediaGetProfile:
@@ -123,7 +123,7 @@ func onvifDeviceService(w http.ResponseWriter, r *http.Request) {
 		b = onvif.GetProfileResponse(token)
 
 	case onvif.MediaGetVideoSourceConfigurations:
-		// important for Happytime Onvif Client
+		// Happytime ONVIF 客户端需要此项
 		b = onvif.GetVideoSourceConfigurationsResponse(streams.GetAllNames())
 
 	case onvif.MediaGetVideoSourceConfiguration:

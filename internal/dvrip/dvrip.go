@@ -16,7 +16,7 @@ import (
 func Init() {
 	streams.HandleFunc("dvrip", dvrip.Dial)
 
-	// DVRIP client autodiscovery
+	// DVRIP 客户端自动发现
 	api.HandleFunc("api/dvrip", apiDvrip)
 }
 
@@ -69,7 +69,7 @@ func discover() ([]*api.Source, error) {
 }
 
 func sendBroadcasts(conn *net.UDPConn) {
-	// broadcasting the same multiple times because the devies some times don't answer
+	// 重复广播，因为设备有时不响应
 	data, err := hex.DecodeString("ff00000000000000000000000000fa0500000000")
 	if err != nil {
 		return

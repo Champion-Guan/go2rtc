@@ -1,4 +1,4 @@
-// Package hds - HomeKit Data Stream
+// hds 包：HomeKit 数据流
 package hds
 
 import (

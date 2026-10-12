@@ -68,14 +68,14 @@ func Init() {
 
 	var err error
 
-	// create pionAPI with custom codecs list and custom network settings
+	// 使用自定义编码列表和网络设置创建 pionAPI
 	serverAPI, err = webrtc.NewServerAPI(network, address, &cfg.Mod.Filters)
 	if err != nil {
 		log.Error().Err(err).Caller().Send()
 		return
 	}
 
-	// use same API for WebRTC server and client if no address
+	// 未指定地址时，WebRTC 服务器和客户端使用同一接口
 	clientAPI = serverAPI
 
 	if address != "" {
@@ -88,7 +88,7 @@ func Init() {
 	}
 
 	PeerConnection = func(active bool) (*pion.PeerConnection, error) {
-		// active - client, passive - server
+		// active 为客户端，passive 为服务器
 		if active {
 			return clientAPI.NewPeerConnection(pionConf)
 		} else {
@@ -96,15 +96,15 @@ func Init() {
 		}
 	}
 
-	// async WebRTC server (two API versions)
+	// 异步 WebRTC 服务器，支持两个接口版本
 	ws.HandleFunc("webrtc", asyncHandler)
 	ws.HandleFunc("webrtc/offer", asyncHandler)
 	ws.HandleFunc("webrtc/candidate", candidateHandler)
 
-	// sync WebRTC server (two API versions)
+	// 同步 WebRTC 服务器，支持两个接口版本
 	api.HandleFunc("api/webrtc", syncHandler)
 
-	// WebRTC client
+	// WebRTC 客户端
 	streams.HandleFunc("webrtc", streamsHandler)
 }
 
@@ -139,7 +139,7 @@ func asyncHandler(tr *ws.Transport, msg *ws.Message) (err error) {
 		ICEServers []pion.ICEServer `json:"ice_servers"`
 	}
 
-	// V2 - json/object exchange, V1 - raw SDP exchange
+	// V2 交换 JSON 对象，V1 交换原始 SDP
 	apiV2 := msg.Type == "webrtc"
 
 	if apiV2 {
@@ -150,7 +150,7 @@ func asyncHandler(tr *ws.Transport, msg *ws.Message) (err error) {
 		offer.SDP = msg.String()
 	}
 
-	// create new PeerConnection instance
+	// 创建新的 PeerConnection 实例
 	var pc *pion.PeerConnection
 	if offer.ICEServers == nil {
 		pc, err = PeerConnection(false)
@@ -164,7 +164,7 @@ func asyncHandler(tr *ws.Transport, msg *ws.Message) (err error) {
 
 	var sendAnswer core.Waiter
 
-	// protect from blocking on errors
+	// 防止错误导致阻塞
 	defer sendAnswer.Done(nil)
 
 	conn := webrtc.NewConn(pc)
@@ -198,7 +198,7 @@ func asyncHandler(tr *ws.Transport, msg *ws.Message) (err error) {
 
 	log.Trace().Msgf("[webrtc] offer:\n%s", offer.SDP)
 
-	// 1. SetOffer, so we can get remote client codecs
+	// 1. 设置提议，获取远端客户端编码
 	if err = conn.SetOffer(offer.SDP); err != nil {
 		log.Warn().Err(err).Caller().Send()
 		return err
@@ -206,7 +206,7 @@ func asyncHandler(tr *ws.Transport, msg *ws.Message) (err error) {
 
 	switch mode {
 	case core.ModePassiveConsumer:
-		// 2. AddConsumer, so we get new tracks
+		// 2. 添加消费者，获取新轨道
 		if err = stream.AddConsumer(conn); err != nil {
 			log.Debug().Err(err).Msg("[webrtc] add consumer")
 			_ = conn.Close()
@@ -216,7 +216,7 @@ func asyncHandler(tr *ws.Transport, msg *ws.Message) (err error) {
 		stream.AddProducer(conn)
 	}
 
-	// 3. Exchange SDP without waiting all candidates
+	// 3. 交换 SDP，无需等待全部候选地址
 	answer, err := conn.GetAnswer()
 	log.Trace().Msgf("[webrtc] answer\n%s", answer)
 
@@ -246,7 +246,7 @@ func ExchangeSDP(stream *streams.Stream, offer, desc, userAgent string) (answer 
 		return
 	}
 
-	// create new webrtc instance
+	// 创建新的 WebRTC 实例
 	conn := webrtc.NewConn(pc)
 	conn.FormatName = desc
 	conn.UserAgent = userAgent
@@ -265,7 +265,7 @@ func ExchangeSDP(stream *streams.Stream, offer, desc, userAgent string) (answer 
 		}
 	})
 
-	// 1. SetOffer, so we can get remote client codecs
+	// 1. 设置提议，获取远端客户端编码
 	log.Trace().Msgf("[webrtc] offer:\n%s", offer)
 
 	if err = conn.SetOffer(offer); err != nil {
@@ -276,7 +276,7 @@ func ExchangeSDP(stream *streams.Stream, offer, desc, userAgent string) (answer 
 	if IsConsumer(conn) {
 		conn.Mode = core.ModePassiveConsumer
 
-		// 2. AddConsumer, so we get new tracks
+		// 2. 添加消费者，获取新轨道
 		if err = stream.AddConsumer(conn); err != nil {
 			log.Warn().Err(err).Caller().Send()
 			_ = conn.Close()
@@ -299,19 +299,19 @@ func ExchangeSDP(stream *streams.Stream, offer, desc, userAgent string) (answer 
 }
 
 func IsConsumer(conn *webrtc.Conn) bool {
-	// if wants get video - consumer
+	// 接收视频时作为消费者
 	for _, media := range conn.GetMedias() {
 		if media.Kind == core.KindVideo && media.Direction == core.DirectionSendonly {
 			return true
 		}
 	}
-	// if wants send video - producer
+	// 发送视频时作为生产者
 	for _, media := range conn.GetMedias() {
 		if media.Kind == core.KindVideo && media.Direction == core.DirectionRecvonly {
 			return false
 		}
 	}
-	// if wants something - consumer
+	// 请求媒体时作为消费者
 	for _, media := range conn.GetMedias() {
 		if media.Direction == core.DirectionSendonly {
 			return true

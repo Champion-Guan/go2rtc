@@ -71,8 +71,8 @@ func DecodeSPS(nalu []byte) *SPS {
 	return s
 }
 
-// profile_tier_level supports ONLY general_profile_idc == 1
-// over variants very complicated...
+// profile_tier_level 仅支持 general_profile_idc == 1
+// 其他变体很复杂
 //
 //goland:noinspection GoSnakeCaseUsage
 func (s *SPS) profile_tier_level(r *bits.Reader) bool {

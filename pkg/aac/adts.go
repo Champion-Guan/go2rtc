@@ -19,24 +19,24 @@ func ADTSHeaderLen(b []byte) int {
 
 func IsADTS(b []byte) bool {
 	// AAAAAAAA AAAABCCD EEFFFFGH HHIJKLMM MMMMMMMM MMMOOOOO OOOOOOPP (QQQQQQQQ QQQQQQQQ)
-	// A	12	Syncword, all bits must be set to 1.
-	// C	2	Layer, always set to 0.
+	// A 12 位：同步字，全部位必须为 1
+	// C 2 位：层，始终为 0
 	return len(b) >= ADTSHeaderSize && b[0] == 0xFF && b[1]&0b1111_0110 == 0xF0
 }
 
 func HasCRC(b []byte) bool {
 	// AAAAAAAA AAAABCCD EEFFFFGH HHIJKLMM MMMMMMMM MMMOOOOO OOOOOOPP (QQQQQQQQ QQQQQQQQ)
-	// D	1	Protection absence, set to 1 if there is no CRC and 0 if there is CRC.
+	// D 1 位：无保护标志，无 CRC 为 1，有 CRC 为 0
 	return b[1]&0b1 == 0
 }
 
 func ADTSToCodec(b []byte) *core.Codec {
-	// 1. Check ADTS header
+	// 1. 检查 ADTS 头
 	if !IsADTS(b) {
 		return nil
 	}
 
-	// 2. Decode ADTS params
+	// 2. 解码 ADTS 参数
 	// https://wiki.multimedia.cx/index.php/ADTS
 	rd := bits.NewReader(b)
 	_ = rd.ReadBits(12)              // Syncword, all bits must be set to 1
@@ -57,7 +57,7 @@ func ADTSToCodec(b []byte) *core.Codec {
 	//_ = rd.ReadBits(2)  // Number of AAC frames (Raw Data Blocks) in ADTS frame minus 1
 	//_ = rd.ReadBits(16) // CRC check
 
-	// 3. Encode RTP config
+	// 3. 编码 RTP 配置
 	wr := bits.NewWriter(nil)
 	wr.WriteBits8(objType, 5)
 	wr.WriteBits8(sampleRateIdx, 4)

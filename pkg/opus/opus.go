@@ -87,14 +87,14 @@ func parseFrames(c byte) byte {
 }
 
 func JoinFrames(b1, b2 []byte) []byte {
-	// can't join
+	// 无法合并
 	if b1[0]&0b11 != 0 || b2[0]&0b11 != 0 {
 		return append(b1, b2...)
 	}
 
 	size1, size2 := len(b1)-1, len(b2)-1
 
-	// join same sizes
+	// 合并相同大小的数据
 	if size1 == size2 {
 		b := make([]byte, 1+size1+size2)
 		copy(b, b1)

@@ -31,8 +31,8 @@ func Init() {
 
 	log = app.GetLogger("ffmpeg")
 
-	// zerolog levels: trace debug         info warn    error fatal panic disabled
-	// FFmpeg  levels: trace debug verbose info warning error fatal panic quiet
+	// zerolog 日志级别：trace debug info warn error fatal panic disabled
+	// FFmpeg 日志级别：trace debug verbose info warning error fatal panic quiet
 	if cfg.Log.Level == "warn" {
 		cfg.Log.Level = "warning"
 	}
@@ -75,10 +75,10 @@ var defaults = map[string]string{
 	"output/aac":   "-f adts -",
 	"output/wav":   "-f wav -",
 
-	// `-preset superfast` - we can't use ultrafast because it doesn't support `-profile main -level 4.1`
-	// `-tune zerolatency` - for minimal latency
-	// `-profile high -level 4.1` - most used streaming profile
-	// `-pix_fmt:v yuv420p` - important for Telegram
+	// `-preset superfast`：不能使用 ultrafast，因为它不支持 `-profile main -level 4.1`
+	// `-tune zerolatency`：尽量降低延迟
+	// `-profile high -level 4.1`：常用的流媒体编码配置
+	// `-pix_fmt:v yuv420p`：Telegram 所需的像素格式
 	"h264":  "-c:v libx264 -g 50 -profile:v high -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p",
 	"h265":  "-c:v libx265 -g 50 -profile:v main -x265-params level=5.1:high-tier=0 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p",
 	"mjpeg": "-c:v mjpeg",
@@ -93,7 +93,7 @@ var defaults = map[string]string{
 	// https://ffmpeg.org/ffmpeg-codecs.html#libopus-1
 	// https://github.com/pion/webrtc/issues/1514
 	// https://ffmpeg.org/ffmpeg-resampler.html
-	// `-async 1` or `-min_comp 0` - force resampling for static timestamp inc, important for WebRTC audio quality
+	// `-async 1` 或 `-min_comp 0`：强制重采样以保持时间戳递增，改善 WebRTC 音质
 	"opus":       "-c:a libopus -application:a lowdelay -min_comp 0",
 	"opus/16000": "-c:a libopus -application:a lowdelay -min_comp 0 -ar:a 16000 -ac:a 1",
 	"pcmu":       "-c:a pcm_mulaw -ar:a 8000 -ac:a 1",
@@ -116,42 +116,42 @@ var defaults = map[string]string{
 	"pcml/16000": "-c:a pcm_s16le -ar:a 16000 -ac:a 1",
 	"pcml/44100": "-c:a pcm_s16le -ar:a 44100 -ac:a 1",
 
-	// hardware Intel and AMD on Linux
-	// better not to set `-async_depth:v 1` like for QSV, because framedrops
-	// `-bf 0` - disable B-frames is very important
+	// Linux 上的 Intel 和 AMD 硬件加速
+	// 不建议像 QSV 一样设置 `-async_depth:v 1`，否则可能掉帧
+	// `-bf 0`：务必禁用 B 帧
 	"h264/vaapi":  "-c:v h264_vaapi -g 50 -bf 0 -profile:v high -level:v 4.1 -sei:v 0",
 	"h265/vaapi":  "-c:v hevc_vaapi -g 50 -bf 0 -profile:v main -level:v 5.1 -sei:v 0",
 	"mjpeg/vaapi": "-c:v mjpeg_vaapi",
 
-	// hardware Raspberry
+	// 树莓派硬件加速
 	"h264/v4l2m2m": "-c:v h264_v4l2m2m -g 50 -bf 0",
 	"h265/v4l2m2m": "-c:v hevc_v4l2m2m -g 50 -bf 0",
 
-	// hardware Rockchip
-	// important to use custom ffmpeg https://github.com/AlexxIT/go2rtc/issues/768
-	// hevc - doesn't have a profile setting
+	// 瑞芯微硬件加速
+	// 必须使用自定义 FFmpeg：https://github.com/AlexxIT/go2rtc/issues/768
+	// HEVC 不包含 profile 设置
 	"h264/rkmpp":  "-c:v h264_rkmpp -g 50 -bf 0 -profile:v high -level:v 4.1",
 	"h265/rkmpp":  "-c:v hevc_rkmpp -g 50 -bf 0 -profile:v main -level:v 5.1",
 	"mjpeg/rkmpp": "-c:v mjpeg_rkmpp",
 
-	// hardware NVidia on Linux and Windows
-	// preset=p2 - faster, tune=ll - low latency
+	// Linux 和 Windows 上的 NVIDIA 硬件加速
+	// preset=p2 表示更快，tune=ll 表示低延迟
 	"h264/cuda": "-c:v h264_nvenc -g 50 -bf 0 -profile:v high -level:v auto -preset:v p2 -tune:v ll",
 	"h265/cuda": "-c:v hevc_nvenc -g 50 -bf 0 -profile:v main -level:v auto",
 
-	// hardware Intel on Windows
+	// Windows 上的 Intel 硬件加速
 	"h264/dxva2":  "-c:v h264_qsv -g 50 -bf 0 -profile:v high -level:v 4.1 -async_depth:v 1",
 	"h265/dxva2":  "-c:v hevc_qsv -g 50 -bf 0 -profile:v main -level:v 5.1 -async_depth:v 1",
 	"mjpeg/dxva2": "-c:v mjpeg_qsv",
 
-	// hardware macOS
+	// macOS 硬件加速
 	"h264/videotoolbox": "-c:v h264_videotoolbox -g 50 -bf 0 -profile:v high",
 	"h265/videotoolbox": "-c:v hevc_videotoolbox -g 50 -bf 0 -profile:v main -level:v 5.1",
 }
 
 var log zerolog.Logger
 
-// configTemplate - return template from config (defaults) if exist or return raw template
+// configTemplate 返回配置中的模板；不存在时返回原始模板
 func configTemplate(template string) string {
 	if s := defaults[template]; s != "" {
 		return s
@@ -159,9 +159,9 @@ func configTemplate(template string) string {
 	return template
 }
 
-// inputTemplate - select input template from YAML config by template name
-// if query has input param - select another template by this name
-// if there is no another template - use input param as template
+// inputTemplate 按名称选择 YAML 中的输入模板
+// 查询包含 input 参数时，按该名称选择其他模板
+// 没有对应模板时，直接使用 input 参数作为模板
 func inputTemplate(name, s string, query url.Values) string {
 	var template string
 	if input := query.Get("input"); input != "" {
@@ -180,7 +180,7 @@ func inputTemplate(name, s string, query url.Values) string {
 }
 
 func parseArgs(s string) *ffmpeg.Args {
-	// init FFmpeg arguments
+	// 初始化 FFmpeg 参数
 	args := &ffmpeg.Args{
 		Bin:     defaults["bin"],
 		Global:  defaults["global"],
@@ -197,17 +197,17 @@ func parseArgs(s string) *ffmpeg.Args {
 		s = s[:i]
 	}
 
-	// Parse input:
-	//   1. Input as xxxx:// link (http or rtsp or any other)
-	//   2. Input as stream name
-	//   3. Input as FFmpeg device (local USB camera)
+	// 解析输入：
+	//   1. 输入 xxxx:// 链接（HTTP、RTSP 或其他协议）
+	//   2. 输入流名称
+	//   3. 输入 FFmpeg 设备（本地 USB 摄像头）
 	if i := strings.Index(s, "://"); i > 0 {
 		switch s[:i] {
 		case "http", "https", "rtmp":
 			args.Input = inputTemplate("http", s, query)
 		case "rtsp", "rtsps":
 			// https://ffmpeg.org/ffmpeg-protocols.html#rtsp
-			// skip unnecessary input tracks
+			// 跳过不需要的输入轨道
 			switch {
 			case (args.Video > 0 && args.Audio > 0) || (args.Video == 0 && args.Audio == 0):
 				args.Input = "-allowed_media_types video+audio "
@@ -253,21 +253,21 @@ func parseArgs(s string) *ffmpeg.Args {
 		args.Input = "-use_wallclock_as_timestamps 1 -async 1 " + args.Input
 	}
 
-	// Parse query params:
+	// 解析查询参数：
 	//   1. `width`/`height` params
 	//   2. `rotate` param
-	//   3. `video` params (support multiple)
-	//   4. `audio` params (support multiple)
+	//   3. `video` 参数（支持多个）
+	//   4. `audio` 参数（支持多个）
 	//   5. `hardware` param
 	if query != nil {
-		// 1. Process raw params for FFmpeg
+		// 1. 处理 FFmpeg 原始参数
 		for _, raw := range query["raw"] {
-			// support templates https://github.com/AlexxIT/go2rtc/issues/487
+			// 支持模板：https://github.com/AlexxIT/go2rtc/issues/487
 			raw = configTemplate(raw)
 			args.AddCodec(raw)
 		}
 
-		// 2. Process video filters (resize and rotation)
+		// 2. 处理视频滤镜（缩放和旋转）
 		if query["width"] != nil || query["height"] != nil {
 			filter := "scale="
 			if query["width"] != nil {
@@ -300,10 +300,10 @@ func parseArgs(s string) *ffmpeg.Args {
 		}
 
 		for _, drawtext := range query["drawtext"] {
-			// support templates https://github.com/AlexxIT/go2rtc/issues/487
+			// 支持模板：https://github.com/AlexxIT/go2rtc/issues/487
 			drawtext = configTemplate(drawtext)
 
-			// support default timestamp format
+			// 支持默认时间戳格式
 			if !strings.Contains(drawtext, "text=") {
 				drawtext += `:text='%{localtime\:%Y-%m-%d %X}'`
 			}
@@ -311,7 +311,7 @@ func parseArgs(s string) *ffmpeg.Args {
 			args.AddFilter("drawtext=" + drawtext)
 		}
 
-		// 3. Process video codecs
+		// 3. 处理视频编码
 		if args.Video > 0 {
 			for _, video := range query["video"] {
 				if video != "copy" {
@@ -332,7 +332,7 @@ func parseArgs(s string) *ffmpeg.Args {
 			args.AddCodec("-b:v " + b + " -maxrate " + b + " -bufsize " + b)
 		}
 
-		// 4. Process audio codecs
+		// 4. 处理音频编码
 		if args.Audio > 0 {
 			for _, audio := range query["audio"] {
 				if audio != "copy" {
@@ -361,10 +361,10 @@ func parseArgs(s string) *ffmpeg.Args {
 		args.AddCodec("-an")
 	}
 
-	// change otput from RTSP to some other pipe format
+	// 将输出从 RTSP 改为其他管道格式
 	switch {
 	case args.Video == 0 && args.Audio == 0:
-		// no transcoding from mjpeg input (ffmpeg device with support output as raw MJPEG)
+		// MJPEG 输入无需转码，适用于能输出原始 MJPEG 的 FFmpeg 设备
 		if strings.Contains(args.Input, " mjpeg ") {
 			args.Output = defaults["output/mjpeg"]
 		}

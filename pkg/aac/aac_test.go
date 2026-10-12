@@ -24,7 +24,7 @@ func TestConfigToCodec(t *testing.T) {
 }
 
 func TestADTS(t *testing.T) {
-	// FFmpeg MPEG-TS AAC (one packet)
+	// FFmpeg MPEG-TS AAC 单个数据包
 	s := "fff15080021ffc210049900219002380fff15080021ffc212049900219002380" //...
 	src, err := hex.DecodeString(s)
 	require.Nil(t, err)

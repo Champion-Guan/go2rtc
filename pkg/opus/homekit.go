@@ -5,20 +5,20 @@ import (
 	"github.com/pion/rtp"
 )
 
-// Some info about this magic:
-// - Apple has no respect for RFC 7587 standard and using RFC 3550 for RTP timestamps
-// - Apple can request packets with 20ms duration over LAN connection and 60ms over LTE
-// - FFmpeg produce packets with 20ms duration by default and only one frame per packet
-// - FFmpeg should use "-min_comp 0" option, so every packet will be same duration
-// - Apple doesn't care about real sample rate of track
-// - Apple only cares about proper timestamp based on REQUESTED sample rate
+// 此特殊处理的说明：
+// - Apple 未采用 RFC 7587，而使用 RFC 3550 的 RTP 时间戳
+// - Apple 在局域网中可能请求 20ms 数据包，在 LTE 中请求 60ms 数据包
+// - FFmpeg 默认生成 20ms 数据包，每包仅有一帧
+// - FFmpeg 应使用 -min_comp 0，让每个包保持相同时长
+// - Apple 不关注轨道的实际采样率
+// - Apple 只关注基于请求采样率的正确时间戳
 
-// RepackToHAP - convert standart RTP packet with OPUS to HAP packet
-// We expect that:
-// - incoming packet will be 20ms duration and only one frame per packet
-// - outgouing packet will be 20ms or 60ms duration
-// - incoming sample rate will be any (but not very big if we needs 60ms packets for output)
-// - outgouing sample rate will be 16000
+// RepackToHAP 将标准 OPUS RTP 包转换为 HAP 包
+// 预期条件：
+// - 输入数据包时长为 20ms，每包仅有一帧
+// - 输出数据包时长为 20ms 或 60ms
+// - 输入采样率可以不同；输出 60ms 数据包时不能过大
+// - 输出采样率为 16000
 // https://github.com/AlexxIT/go2rtc/issues/667
 func RepackToHAP(rtpTime byte, handler core.HandlerFunc) core.HandlerFunc {
 	switch rtpTime {
@@ -30,13 +30,13 @@ func RepackToHAP(rtpTime byte, handler core.HandlerFunc) core.HandlerFunc {
 	return handler
 }
 
-// we using only one sample rate in the pkg/hap/camera/accessory.go
+// pkg/hap/camera/accessory.go 中仅使用一个采样率
 const (
 	timestamp20 = 16000 * 0.020
 	timestamp60 = 16000 * 0.060
 )
 
-// repackToHAP20 - just fix RTP timestamp from RFC 7587 to RFC 3550
+// repackToHAP20 将 RTP 时间戳从 RFC 7587 修正为 RFC 3550
 func repackToHAP20(handler core.HandlerFunc) core.HandlerFunc {
 	var timestamp uint32
 
@@ -49,8 +49,8 @@ func repackToHAP20(handler core.HandlerFunc) core.HandlerFunc {
 	}
 }
 
-// repackToHAP60 - collect 20ms frames to single 60ms packet
-// thanks to @civita idea https://github.com/AlexxIT/go2rtc/pull/843
+// repackToHAP60 将 20 ms 帧合并为单个 60 ms 数据包
+// 感谢 @civita 的思路：https://github.com/AlexxIT/go2rtc/pull/843
 func repackToHAP60(handler core.HandlerFunc) core.HandlerFunc {
 	var sequence uint16
 	var timestamp uint32

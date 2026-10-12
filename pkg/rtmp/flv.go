@@ -25,30 +25,30 @@ func (c *Conn) Producer() (*flv.Producer, error) {
 	return prod, nil
 }
 
-// Read - convert RTMP to FLV format
+// Read 将 RTMP 转换为 FLV
 func (c *Conn) Read(p []byte) (n int, err error) {
-	// 1. Check temporary tempbuffer
+	// 1. 检查临时缓冲区
 	if len(c.rdBuf) == 0 {
 		msgType, timeMS, payload, err2 := c.readMessage()
 		if err2 != nil {
 			return 0, err2
 		}
 
-		// previous tag size (4 byte) + header (11 byte) + payload
+		// 上一标签大小 4 字节 + 头部 11 字节 + 负载
 		n = 4 + 11 + len(payload)
 
-		// 2. Check if the message fits in the buffer
+		// 2. 检查消息是否能放入缓冲区
 		if n <= len(p) {
 			encodeFLV(p, msgType, timeMS, payload)
 			return
 		}
 
-		// 3. Put the message into a temporary buffer
+		// 3. 将消息放入临时缓冲区
 		c.rdBuf = make([]byte, n)
 		encodeFLV(c.rdBuf, msgType, timeMS, payload)
 	}
 
-	// 4. Send temporary buffer
+	// 4. 发送临时缓冲区
 	n = copy(p, c.rdBuf)
 	c.rdBuf = c.rdBuf[n:]
 	return
@@ -69,7 +69,7 @@ func encodeFLV(b []byte, msgType byte, time uint32, payload []byte) {
 	copy(b[4+11:], payload)
 }
 
-// Write - convert FLV format to RTMP format
+// Write 将 FLV 转换为 RTMP
 func (c *Conn) Write(p []byte) (n int, err error) {
 	n = len(p)
 
@@ -86,7 +86,7 @@ func (c *Conn) Write(p []byte) (n int, err error) {
 		return
 	}
 
-	// decode FLV: 11 bytes header + payload + 4 byte size
+	// 解码 FLV：11 字节头部 + 负载 + 4 字节大小
 	tagType := p[0]
 	timeMS := uint32(p[4])<<16 | uint32(p[5])<<8 | uint32(p[6]) | uint32(p[7])<<24
 	payload := p[11 : len(p)-4]

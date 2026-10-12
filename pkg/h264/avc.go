@@ -8,24 +8,24 @@ import (
 const forbiddenZeroBit = 0x80
 const nalUnitType = 0x1F
 
-// Deprecated: DecodeStream - find and return first AU in AVC format
-// useful for processing live streams with unknown separator size
+// Deprecated: DecodeStream 查找并返回 AVC 格式的第一个访问单元
+// 用于处理分隔符大小未知的实时流
 func DecodeStream(annexb []byte) ([]byte, int) {
 	startPos := -1
 
 	i := 0
 	for {
-		// search next separator
+		// 查找下一个分隔符
 		if i = IndexFrom(annexb, []byte{0, 0, 1}, i); i < 0 {
 			break
 		}
 
-		// move i to next AU
+		// 将 i 移到下一个访问单元
 		if i += 3; i >= len(annexb) {
 			break
 		}
 
-		// check if AU type valid
+		// 检查访问单元类型是否有效
 		octet := annexb[i]
 		if octet&forbiddenZeroBit != 0 {
 			continue
@@ -58,8 +58,8 @@ func DecodeStream(annexb []byte) ([]byte, int) {
 	return nil, 0
 }
 
-// DecodeAnnexB - convert AnnexB to AVC format
-// support unknown separator size
+// DecodeAnnexB 将 Annex-B 转换为 AVC
+// 支持未知大小的分隔符
 func DecodeAnnexB(b []byte) []byte {
 	if b[2] == 1 {
 		// convert: 0 0 1 => 0 0 0 1
@@ -70,17 +70,17 @@ func DecodeAnnexB(b []byte) []byte {
 
 	i := 4
 	for {
-		// search next separato
+		// 查找下一个分隔符
 		if i = IndexFrom(b, []byte{0, 0, 1}, i); i < 0 {
 			break
 		}
 
-		// move i to next AU
+		// 将 i 移到下一个访问单元
 		if i += 3; i >= len(b) {
 			break
 		}
 
-		// check if AU type valid
+		// 检查访问单元类型是否有效
 		octet := b[i]
 		if octet&forbiddenZeroBit != 0 {
 			continue

@@ -1,4 +1,4 @@
-// Package v1
+// v1 软件包
 // http://web.archive.org/web/20110719132013/http://hazelware.luggle.com/tutorials/mulawcompression.html
 package v1
 

@@ -41,7 +41,7 @@ func Init() {
 
 			// Addr: "//localhost:8555", URL: "tcp://1.tcp.eu.ngrok.io:12345"
 			if strings.HasPrefix(msg.Addr, "//localhost:") && strings.HasPrefix(msg.URL, "tcp://") {
-				// don't know if really necessary use IP
+				// 尚不确定是否必须使用 IP 地址
 				address, err := ConvertHostToIP(msg.URL[6:])
 				if err != nil {
 					log.Warn().Err(err).Msg("[ngrok] add candidate")
