@@ -520,5 +520,7 @@
   ".github/workflows/test.yml": ".github/workflows/构建测试.yml",
   ".github/workflows/gh-pages.yml": ".github/workflows/文档部署.yml",
   "容器/hardware.Dockerfile": "容器/硬件加速.Dockerfile",
-  "容器/rockchip.Dockerfile": "容器/瑞芯微.Dockerfile"
+  "容器/rockchip.Dockerfile": "容器/瑞芯微.Dockerfile",
+  "README.md": "项目入口.md",
+  "LICENSE": "许可证.md"
 }
